@@ -24,19 +24,24 @@ Class OPTIMISER : Inherits UTILITIES
         Console.WriteLine("FIRST BOI")
         Console.WriteLine(IN_ORDER(TO_MODIFY, True))
         TREE_TO_MODIFY = TO_MODIFY
-        REMOVE_NEGATIVITY(TREE_TO_MODIFY) ' Removes the negative roots.
         'NUMERICAL_TO_MULTIPLICATION(TREE_TO_MODIFY)
         While Not LAST_TREE = IN_ORDER(TREE_TO_MODIFY, True)
             LAST_TREE = IN_ORDER(TREE_TO_MODIFY, True)
+            REMOVE_NEGATIVITY(TREE_TO_MODIFY) ' Removes the negative roots.
             TREE_TO_MODIFY = TO_MODIFY
             LEVEL_OPERATORS(TREE_TO_MODIFY) ' levels the operators, see function for more details.
             RATIONAL_SIMPLIFICATION(TREE_TO_MODIFY)
             Console.WriteLine("FINISHED BOI")
             Console.WriteLine(IN_ORDER(TREE_TO_MODIFY, True))
+        End While
+        LAST_TREE = ""
+        While Not LAST_TREE = IN_ORDER(TREE_TO_MODIFY, True)
+            LAST_TREE = IN_ORDER(TREE_TO_MODIFY, True)
             COLLECT_LIKE_TERMS(TREE_TO_MODIFY)
             Console.WriteLine("FINISHED BOI V2")
             Console.WriteLine(IN_ORDER(TREE_TO_MODIFY, True))
         End While
+
 
         ' Those optimisations can be considered 'trivial' based on the fact that they merely reorganise the expression. 
         ' I now need to collect like terms, simplify trivial terms like x^0 = 1, and distribute (a+b)(c+d).
@@ -70,65 +75,69 @@ Class OPTIMISER : Inherits UTILITIES
 
         ' I will use a pre order search for this circumstance.
 
-
         Dim ITERATION_ARRAY = {NODE.LEFT, NODE.RIGHT}
         Dim NODE_LIST As New List(Of TREE_NODE) 'Used so that I can easily compare.
-
         Dim ADDED = False
-        Console.WriteLine("PARENT" & NODE.VALUE)
-
+        If NODE.VALUE = "+" Then
+            Console.WriteLine("PARENT" & NODE.VALUE)
+        End If
         ' I consider this an 'Up to Down' Method.
 
         If NODE.VALUE = "+" Then ' Like terms can be collected.
             For Each ELEMENT As List(Of TREE_NODE) In ITERATION_ARRAY ' This loops through the 
+                Console.WriteLine("COUNTTT" & ELEMENT.Count)
                 For A As Integer = 0 To ELEMENT.Count() - 1 ' I am modifying the table as I loop, so this is a requirement. Either that, or cloning the table.
                     If (A) <= (ELEMENT.Count - 1) Then
                         Console.WriteLine("LOOPING")
                         Dim ELEMENT_A As TREE_NODE = ELEMENT(A) ' The element I will compare against all the others within the NODE_LIST.
-                        Dim ELEMENT_TOTAL, ELEMENT_B As TREE_NODE
-                        ' Console.WriteLine(IN_ORDER(ELEMENT_A, True) & " juh ")
-                        For Each ELEMENT_B_TEMP As TREE_NODE In NODE_LIST ' I will now compare it to every node I HAVE looked at. (This is better than, say, comparing it to everything from the getgo.)
-                            Dim TERMS_A, TERMS_B As SEPERATED_TERMS
-                            TERMS_A = RETURN_VARIABLE_AND_COEFFICIENT(ELEMENT_A.CLONE())
-                            TERMS_B = RETURN_VARIABLE_AND_COEFFICIENT(ELEMENT_B_TEMP.CLONE())
-                            '  Console.WriteLine(IN_ORDER(ELEMENT_A, True) & " WHAT " & IN_ORDER(ELEMENT_B_TEMP, True))
-                            Console.WriteLine(IN_ORDER(TERMS_A.VARIABLE, True) & "COFF" & IN_ORDER(TERMS_B.VARIABLE, True))
-                            If IN_ORDER(TERMS_A.VARIABLE, True) = IN_ORDER(TERMS_B.VARIABLE, True) Then
-                                Dim NEW_NODE As New TREE_NODE
-                                NEW_NODE.VALUE = TERMS_A.COEFFICIENT + TERMS_B.COEFFICIENT ' This will be the new coefficient
-                                Console.WriteLine("NEW COFF" & NEW_NODE.VALUE)
-                                Console.WriteLine("FINALISED THING" & IN_ORDER(TERMS_B.VARIABLE, True) & "NODE ROOT" & TERMS_B.VARIABLE.LEFT(0).VALUE)
-                                If TERMS_B.VARIABLE.VALUE = "*" Then
-                                    TERMS_B.VARIABLE.LEFT.Insert(0, NEW_NODE) ' I will add the coefficient to the front of the node's variable. 
-                                ElseIf TERMS_B.VARIABLE.VALUE = "/" Then ' As "/" is binary, then I must insert it into the extra node beyond the left node. Say * or +. Ie, its some addition, or multiplication, divided by something else.
-                                    TERMS_B.VARIABLE.LEFT(0).LEFT.Insert(0, NEW_NODE) ' I'll go left in the left because who likes it right.
-                                End If
-                                ELEMENT_TOTAL = TERMS_B.VARIABLE ' This will be the new node.
+                        If ELEMENT_A.VALUE <> "+" Then
+                            Dim ELEMENT_TOTAL, ELEMENT_B As TREE_NODE
+                            ' Console.WriteLine(IN_ORDER(ELEMENT_A, True) & " juh ")
+                            Console.WriteLine("NODE VALUE" & ELEMENT_A.VALUE)
+                            For Each ELEMENT_B_TEMP As TREE_NODE In NODE_LIST ' I will now compare it to every node I HAVE looked at. (This is better than, say, comparing it to everything from the getgo.)
+                                Dim TERMS_A, TERMS_B As SEPERATED_TERMS
+                                Console.WriteLine("WHAT THE FUCK IS THIS " & IN_ORDER(ELEMENT_B_TEMP, True))
+                                TERMS_A = RETURN_VARIABLE_AND_COEFFICIENT(ELEMENT_A.CLONE())
+                                TERMS_B = RETURN_VARIABLE_AND_COEFFICIENT(ELEMENT_B_TEMP.CLONE())
+                                '  Console.WriteLine(IN_ORDER(ELEMENT_A, True) & " WHAT " & IN_ORDER(ELEMENT_B_TEMP, True))
+                                Console.WriteLine(TERMS_A.COEFFICIENT & " SByte " & IN_ORDER(TERMS_A.VARIABLE, True) & "COFF" & IN_ORDER(TERMS_B.VARIABLE, True) & " SByte " & TERMS_B.COEFFICIENT)
+                                If IN_ORDER(TERMS_A.VARIABLE, True) = IN_ORDER(TERMS_B.VARIABLE, True) Then
+                                    Dim NEW_NODE As New TREE_NODE
+                                    NEW_NODE.VALUE = TERMS_A.COEFFICIENT + TERMS_B.COEFFICIENT ' This will be the new coefficient
+                                    Console.WriteLine("NEW COFF" & NEW_NODE.VALUE)
+                                    ' Console.WriteLine("FINALISED THING" & IN_ORDER(TERMS_B.VARIABLE, True) & "NODE ROOT" & TERMS_B.VARIABLE.LEFT(0).VALUE)
+                                    If TERMS_B.VARIABLE.VALUE = "*" Then
+                                        TERMS_B.VARIABLE.LEFT.Insert(0, NEW_NODE) ' I will add the coefficient to the front of the node's variable. 
+                                    ElseIf TERMS_B.VARIABLE.VALUE = "/" Then ' As "/" is binary, then I must insert it into the extra node beyond the left node. Say * or +. Ie, its some addition, or multiplication, divided by something else.
+                                        TERMS_B.VARIABLE.LEFT(0).LEFT.Insert(0, NEW_NODE) ' I'll go left in the left because who likes it right.
+                                    End If
+                                    ELEMENT_TOTAL = TERMS_B.VARIABLE ' This will be the new node.
                                     ELEMENT_B = ELEMENT_B_TEMP ' This is here so I can remove it.
                                     Exit For
                                 End If
-                        Next
+                            Next
 
-                        If Not ELEMENT_B Is Nothing Then ' As it is an 'each' loop, I will need to modify it outside of it. And yes I hate the 'IsNot Nothing'
-                            Console.WriteLine(IN_ORDER(ELEMENT_A, True) & " the fukc" & IN_ORDER(ELEMENT_B, True))
-                            NODE_LIST.Remove(ELEMENT_B)
-                            If ELEMENT.Contains(ELEMENT_B) Then
-                                ELEMENT.Remove(ELEMENT_B)
+                            If Not ELEMENT_B Is Nothing Then ' As it is an 'each' loop, I will need to modify it outside of it. And yes I hate the 'IsNot Nothing'
+                                Console.WriteLine(IN_ORDER(ELEMENT_A, True) & " the fukc" & IN_ORDER(ELEMENT_B, True))
+                                NODE_LIST.Remove(ELEMENT_B)
+                                If ELEMENT.Contains(ELEMENT_B) Then
+                                    ELEMENT.Remove(ELEMENT_B)
+                                End If
+                                ITERATION_ARRAY(1).Remove(ELEMENT_B) ' "It just works." TM
+                                ITERATION_ARRAY(0).Remove(ELEMENT_B) ' If the list becomes massive then this will become a problem. It won't become massive.
+                                ELEMENT.Remove(ELEMENT_A)
+                                ELEMENT.Add(ELEMENT_TOTAL)
+                            Else ' This means no like term could be found. Thus I will just add ELEMENT_A to the NODE_LIST to be compared to the rest.
+                                Console.WriteLine("ADFDING TO NODE LIST BAHAHA" & ELEMENT_A.VALUE & " actual THING" & IN_ORDER(ELEMENT_A, True))
+                                NODE_LIST.Add(ELEMENT_A)
                             End If
-                            ITERATION_ARRAY(1).Remove(ELEMENT_B) ' "It just works." TM
-                            ITERATION_ARRAY(0).Remove(ELEMENT_B) ' If the list becomes massive then this will become a problem. It won't become massive.
-                            ELEMENT.Remove(ELEMENT_A)
-                            ELEMENT.Add(ELEMENT_TOTAL)
-                        Else ' This means no like term could be found. Thus I will just add ELEMENT_A to the NODE_LIST to be compared to the rest.
-                            NODE_LIST.Add(ELEMENT_A)
+                            ELEMENT_B = Nothing
+                            ELEMENT_A = Nothing
                         End If
-                        ELEMENT_B = Nothing
-                        ELEMENT_A = Nothing
                     End If
                 Next
             Next
         End If
-
         If Not NODE.LEFT Is Nothing Then
             Dim BACK_TRACK_B As Integer = 0
             For A As Integer = 0 To NODE.LEFT.Count() - 1
@@ -156,6 +165,7 @@ Class OPTIMISER : Inherits UTILITIES
         Dim COEFFICIENT As Integer = 0
         Dim RETURN_STRUCTURE As New SEPERATED_TERMS
 
+        'Console.WriteLine("THIS IS WHAT WILL BE SOPRTED " & IN_ORDER(NODE, True))
 
         If Not NODE.LEFT Is Nothing Then
             For A As Integer = 0 To NODE.LEFT.Count() - 1
@@ -166,13 +176,13 @@ Class OPTIMISER : Inherits UTILITIES
                     If IsNumeric(NODE_ELEMENT.VALUE) Then
                         NODE.LEFT.RemoveAt(A) ' Removes the coefficient
                         COEFFICIENT = COEFFICIENT + NODE_ELEMENT.VALUE
-                        Console.WriteLine("addd 1" & COEFFICIENT)
+                        ' Console.WriteLine("addd 1" & COEFFICIENT)
                     End If
                     If NODE_ELEMENT.RIGHT.Count = 1 And NODE_ELEMENT.LEFT.Count = 1 Then
                         If NODE_ELEMENT.VALUE = "*" And NODE_ELEMENT.LEFT(0).VALUE = "-1" Then ' This is a negative number
                             NODE.LEFT.RemoveAt(A) ' Removes the coefficient
                             COEFFICIENT = COEFFICIENT - NODE_ELEMENT.RIGHT(0).VALUE
-                            Console.WriteLine("addd 2" & COEFFICIENT)
+                            'Console.WriteLine("addd 2" & COEFFICIENT)
                         End If
                     End If
                 End If
@@ -429,17 +439,15 @@ Class OPTIMISER : Inherits UTILITIES
         If Not NODE.LEFT Is Nothing Then
             For A As Integer = 0 To NODE.LEFT.Count() - 1
                 Dim NODE_ELEMENT As TREE_NODE = NODE.LEFT(A)
-                If NODE_ELEMENT.VALUE = "+" Or NODE_ELEMENT.VALUE = "*" Then ' If the node element is a + or *
-                    Dim TYPE_RETURN As String = LEVEL_OPERATORS(NODE_ELEMENT) ' This is vital. It returns a +, * or nothing. #
-                    'If its a + or a * that means that the child can be simplified, if this root node has the same root.
-                    ' We have to do this as this is a recursive execution from bottom to up. 
-                    ' It will only return this value when it can no longer traverse down, so that means I can edit from bottom to top. (duh that is how it works)
-                    If TYPE_RETURN <> Nothing And TYPE_RETURN = NODE.VALUE Then
-                        Dim TO_MOVE_ELEMENT_TOTAL As List(Of TREE_NODE) = NODE_ELEMENT.LEFT
-                        Dim TO_MOVE_ELEMENT_SUB As List(Of TREE_NODE) = NODE_ELEMENT.RIGHT
-                        TO_MOVE_ELEMENT_TOTAL.AddRange(TO_MOVE_ELEMENT_SUB)
-                        NODE.LEFT = TO_MOVE_ELEMENT_TOTAL
-                    End If
+                Dim TYPE_RETURN As String = LEVEL_OPERATORS(NODE_ELEMENT) ' This is vital. It returns a +, * or nothing. #
+                'If its a + or a * that means that the child can be simplified, if this root node has the same root.
+                ' We have to do this as this is a recursive execution from bottom to up. 
+                ' It will only return this value when it can no longer traverse down, so that means I can edit from bottom to top. (duh that is how it works)
+                If TYPE_RETURN <> Nothing And TYPE_RETURN = NODE.VALUE Then
+                    Dim TO_MOVE_ELEMENT_TOTAL As List(Of TREE_NODE) = NODE_ELEMENT.LEFT
+                    Dim TO_MOVE_ELEMENT_SUB As List(Of TREE_NODE) = NODE_ELEMENT.RIGHT
+                    TO_MOVE_ELEMENT_TOTAL.AddRange(TO_MOVE_ELEMENT_SUB)
+                    NODE.LEFT = TO_MOVE_ELEMENT_TOTAL
                 End If
             Next
         End If
@@ -469,7 +477,7 @@ End Class
 Module MODULE1
 
     Sub MAIN()
-        Dim SIMPLIFIED As New SIMPLE_SIMPLIFY("9x^2/10+10x^2/10+10x^2/10")
+        Dim SIMPLIFIED As New SIMPLE_SIMPLIFY("((9x+10x+10x+10x+10x+10x)/10)+(9x/10)")
         Console.WriteLine("SUM" & SIMPLIFIED.RESULT)
         Console.Read()
         Console.ReadKey()

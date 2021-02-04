@@ -24,7 +24,7 @@ Class OPTIMISER : Inherits UTILITIES
         Console.WriteLine("FIRST BOI")
         Console.WriteLine(IN_ORDER(TO_MODIFY, True))
         TREE_TO_MODIFY = TO_MODIFY
-        'NUMERICAL_TO_MULTIPLICATION(TREE_TO_MODIFY)
+        PREPARATION_BY_UNIVERSAL_RULING(TREE_TO_MODIFY)
         While Not LAST_TREE = IN_ORDER(TREE_TO_MODIFY, True)
             LAST_TREE = IN_ORDER(TREE_TO_MODIFY, True)
             REMOVE_NEGATIVITY(TREE_TO_MODIFY) ' Removes the negative roots.
@@ -56,6 +56,24 @@ Class OPTIMISER : Inherits UTILITIES
     ' Simplification Functions
     ' //These are made to actually modify the expression.
     '//// THIS TO BE FINISHED!! ////  TAKE INTO ACCOUNT NEAGTIVE NUMBERS!
+
+
+    Private Sub SIMPLE_COLLECT_FRACTION_DENOMINATORS(NODE As TREE_NODE)
+        ' This is made to combine fractions with the same denominator.
+        ' It should be a fairly simple scenarior to solve, and the reason for its existence is for the like term collector to work properly.
+        ' There are a lot more nuances to this solution, though, so I named this one 'Simple'.
+        ' A 'common denominator' can normally be found with ease.
+        ' a/b + c/d, I need to multiply by every other denominator for each term. a/b * d/d. c/d * b/b. 
+
+        ' This function was made before any Multiplication Solver was implemented, so it is crippled in functionality.
+        ' I do not intend to make a fully featured simplifier, so this is fine.
+        ' ~I'll leave it at that before I enter a self serving tangent and realise the enormity of what I'm attempting to 'partially' solve.
+
+
+
+
+
+    End Sub
 
     Structure SEPERATED_TERMS
         Public COEFFICIENT As Integer
@@ -159,9 +177,10 @@ Class OPTIMISER : Inherits UTILITIES
 
     End Function
 
-    ' // MAKE COEFFICIENT FINDER RECURSIVE TO INTO ACCOUNT FRACTIONS.
-
-    Private Function RETURN_VARIABLE_AND_COEFFICIENT(NODE As TREE_NODE) ' This will go through a node and remove the coefficient. It returns an array of the cleaned node and the coefficient.
+    Private Function RETURN_VARIABLE_AND_COEFFICIENT(NODE As TREE_NODE)
+        ' This will go through a node and remove the coefficient. It returns an array of the cleaned node and the coefficient.
+        ' Do not use this on a + node, as that is not okay and hurts me in many ways.
+        ' UPDATE -I can not be bothered to stop it from doing that, but it doesn't seem to do much except waste resources. Probably fine, but I won't test it to make sure. That would give me a reason to fix it.
         Dim COEFFICIENT As Integer = 0
         Dim RETURN_STRUCTURE As New SEPERATED_TERMS
 
@@ -169,7 +188,7 @@ Class OPTIMISER : Inherits UTILITIES
 
         If Not NODE.LEFT Is Nothing Then
             For A As Integer = 0 To NODE.LEFT.Count() - 1
-                If A <= (NODE.LEFT.Count - 1) Then ' Makes sure it exists.
+                If A <= (NODE.LEFT.Count - 1) And NODE.VALUE <> "^" Then ' Makes sure it exists.
                     Dim NODE_ELEMENT_S As SEPERATED_TERMS = RETURN_VARIABLE_AND_COEFFICIENT(NODE.LEFT(A))
                     Dim NODE_ELEMENT As TREE_NODE = NODE_ELEMENT_S.VARIABLE
                     COEFFICIENT += NODE_ELEMENT_S.COEFFICIENT
@@ -194,7 +213,7 @@ Class OPTIMISER : Inherits UTILITIES
                 If NODE.RIGHT.Count = 1 And IsNumeric(NODE.RIGHT(0).VALUE) Then ' This takes into account that a number will be in the form (a*b, where a is the coefficient and b "1"
                     Exit For
                 End If
-                If A <= (NODE.RIGHT.Count - 1) Then  ' Makes sure it exists.
+                If A <= (NODE.RIGHT.Count - 1) And NODE.VALUE <> "^" Then  ' Makes sure it exists.
                     Dim NODE_ELEMENT_S As SEPERATED_TERMS = RETURN_VARIABLE_AND_COEFFICIENT(NODE.RIGHT(A))
                     Dim NODE_ELEMENT As TREE_NODE = NODE_ELEMENT_S.VARIABLE
                     COEFFICIENT += NODE_ELEMENT_S.COEFFICIENT
@@ -222,37 +241,6 @@ Class OPTIMISER : Inherits UTILITIES
 
 
     ' Trivial Flattening functions
-    Private Function READY_FOR_LIKE_TERMS(NODE As TREE_NODE)
-        ' This sub represents every non represented variable as variable^1 when child of *, and as 1*variable when child of +.
-
-
-        If Not NODE.LEFT Is Nothing Then
-            For A As Integer = 0 To NODE.LEFT.Count() - 1
-                Dim NODE_ELEMENT As TREE_NODE = NODE.LEFT(A)
-                If NODE_ELEMENT.VALUE = "+" Or NODE_ELEMENT.VALUE = "*" Then ' If the node element is a + or *
-                    Dim TYPE_RETURN As String = LEVEL_OPERATORS(NODE_ELEMENT) ' It returns a +, * or nothing. 
-                    If TYPE_RETURN <> Nothing And TYPE_RETURN = NODE.VALUE Then
-
-                    End If
-                End If
-            Next
-        End If
-        If Not NODE.RIGHT Is Nothing Then
-            For A As Integer = 0 To NODE.RIGHT.Count() - 1
-                Dim NODE_ELEMENT As TREE_NODE = NODE.RIGHT(A)
-                Dim TYPE_RETURN As String = LEVEL_OPERATORS(NODE_ELEMENT) ' This is vital. It returns a +, * or nothing. #
-                If TYPE_RETURN <> Nothing And TYPE_RETURN = NODE.VALUE Then
-
-                End If
-            Next
-        End If
-
-        If NODE.VALUE = "+" Or NODE.VALUE = "*" Then
-            Return NODE.VALUE
-        End If
-
-        Return Nothing
-    End Function
 
     Private Sub SUB_RATIONAL_FUNCTION(PARENT_NODE As TREE_NODE, NODE As TREE_NODE, TYPE As ETYPE) ' TYPE is the orientation of the child, left or right.
         ' First Case
@@ -389,26 +377,36 @@ Class OPTIMISER : Inherits UTILITIES
         End If
     End Sub
 
-    Private Sub NUMERICAL_TO_MULTIPLICATION(NODE As TREE_NODE) ' This assumes it is a binary tree.
+    Private Sub PREPARATION_BY_UNIVERSAL_RULING(NODE As TREE_NODE)
+        '!!This assumes it IS a Binary Tree!!
+
         ' To easily accomodate for variables and coefficients, I'll change all the numericals to a*1. 
         ' This is so that functions like 'COLLECT_LIKE_TERMS' can function with numbers. It assumes everything is in the form a*b, where a is the coefficient, and b the variable.
         ' In this case the variable will be 1, and this is fine when comparisons are made as it will still proceed with summations.
+
+        ' I will also change variables to all have powers. 
+        ' Ie, x = x^1, but in tree form. 
+        ' This is useful for algorithms, as I won't need to accomodate special cases and turn spaghetti into taglietti. (assume one is worse than the other)
+        ' If you can think of a better name than I'm all ears. Unfortunately I don't have any.
+
 
         Dim ITERATION_ARRAY = {NODE.LEFT, NODE.RIGHT}
 
         If Not NODE.LEFT Is Nothing Then
             For Each NODE_ELEMENT As TREE_NODE In NODE.LEFT
-                NUMERICAL_TO_MULTIPLICATION(NODE_ELEMENT)
+                PREPARATION_BY_UNIVERSAL_RULING(NODE_ELEMENT)
             Next
         End If
         If Not NODE.RIGHT Is Nothing Then
             For Each NODE_ELEMENT As TREE_NODE In NODE.RIGHT
-                NUMERICAL_TO_MULTIPLICATION(NODE_ELEMENT)
+                PREPARATION_BY_UNIVERSAL_RULING(NODE_ELEMENT)
             Next
         End If
+
         For Each ELEMENT As List(Of TREE_NODE) In ITERATION_ARRAY
             If ELEMENT.Count > 0 Then
-                If IsNumeric(ELEMENT(0).VALUE) Then
+                Console.WriteLine("you fucking twat" & ELEMENT(0).VALUE)
+                If IsNumeric(ELEMENT(0).VALUE) Then ' Every single node is checked, so I won't need to loop through. 
                     Dim NEW_NODE, ONE_NODE As New TREE_NODE
                     NEW_NODE.VALUE = "*"
                     ONE_NODE.VALUE = "1"
@@ -416,7 +414,24 @@ Class OPTIMISER : Inherits UTILITIES
                     NEW_NODE.LEFT.Add(ELEMENT(0)) ' Adds the exisiting node.
                     ELEMENT.RemoveAt(0)
                     ELEMENT.Add(NEW_NODE)
-                    Console.WriteLine(IN_ORDER(ELEMENT(0), True))
+                End If
+                If NODE.VALUE = "*" Then
+                    Console.WriteLine("THERES A FEKING TIMES")
+                    ' This means it may have variables in it. 
+                    ' I can modify it such that I loop through each of the variables, and if they have no left and right children, I can modify it to a power node.
+                    ' This works as I assume I will traverse each node, so I will be looking at all the children. (He says with mocking self-assurance.)
+                    For A As Integer = 0 To ELEMENT.Count - 1
+                        Console.WriteLine(ELEMENT(0).VALUE & " lol")
+                        If ELEMENT(A).VALUE <> "+" And ELEMENT(A).VALUE <> "-" And ELEMENT(A).VALUE <> "/" And ELEMENT(A).VALUE <> "*" And ELEMENT(A).VALUE <> "^" And Not IsNumeric(ELEMENT(A).VALUE) Then ' Its just a check that means its a variable. There are other ways. 
+                            Dim NEW_NODE, ONE_NODE As New TREE_NODE
+                            NEW_NODE.VALUE = "^"
+                            ONE_NODE.VALUE = "1"
+                            NEW_NODE.LEFT.Add(ELEMENT(0))
+                            NEW_NODE.RIGHT.Add(ONE_NODE)
+                            ELEMENT.RemoveAt(0)
+                            ELEMENT.Add(NEW_NODE)
+                        End If
+                    Next
                 End If
             End If
         Next
@@ -429,7 +444,7 @@ Class OPTIMISER : Inherits UTILITIES
         ' Therefore the simplifcation involves changing * and + into a single node with many children - as many as possible. 
         ' Negation is assumed to be removed, but for division we must be careful and ignore them. 
 
-        ' I will be using postorder for this. (postorder works from the bottom to the top naturally, which is what I need)
+        ' I will be using postorder for this. (postorder works from the bottom to the top naturally, which I am fanciful towards. Dunno why.)
 
         ' The entire children, left and right, will be examined. I will then need to go 'up' a root, and see if that root is the same as my current one. 
         ' If there are two */+ then I will edit the tree to accomodate for only one root, and all of the children. 
@@ -477,7 +492,7 @@ End Class
 Module MODULE1
 
     Sub MAIN()
-        Dim SIMPLIFIED As New SIMPLE_SIMPLIFY("((9x+10x+10x+10x+10x+10x)/10)+(9x/10)")
+        Dim SIMPLIFIED As New SIMPLE_SIMPLIFY("(9x^2+10x^2+9yx^(5x+2)+99yx^(5x+2))/10+9x/10")
         Console.WriteLine("SUM" & SIMPLIFIED.RESULT)
         Console.Read()
         Console.ReadKey()

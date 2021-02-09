@@ -25,20 +25,22 @@ Class OPTIMISER : Inherits UTILITIES
         Console.WriteLine(IN_ORDER(TO_MODIFY, True))
         TREE_TO_MODIFY = TO_MODIFY
         PREPARATION_BY_UNIVERSAL_RULING(TREE_TO_MODIFY)
+        Console.WriteLine(IN_ORDER(TREE_TO_MODIFY, True))
         While Not LAST_TREE = IN_ORDER(TREE_TO_MODIFY, True)
             LAST_TREE = IN_ORDER(TREE_TO_MODIFY, True)
-            REMOVE_NEGATIVITY(TREE_TO_MODIFY) ' Removes the negative roots.
+            REMOVE_NEGATIVITY(TREE_TO_MODIFY) ' removes the negative roots.
             TREE_TO_MODIFY = TO_MODIFY
             LEVEL_OPERATORS(TREE_TO_MODIFY) ' levels the operators, see function for more details.
             RATIONAL_SIMPLIFICATION(TREE_TO_MODIFY)
-            Console.WriteLine("FINISHED BOI")
-            Console.WriteLine(IN_ORDER(TREE_TO_MODIFY, True))
         End While
+        Console.WriteLine("finished boi")
+        FRACTION_COLLECTER_WRAPPER(TREE_TO_MODIFY)
+        Console.WriteLine(IN_ORDER(TREE_TO_MODIFY, True))
         LAST_TREE = ""
         While Not LAST_TREE = IN_ORDER(TREE_TO_MODIFY, True)
             LAST_TREE = IN_ORDER(TREE_TO_MODIFY, True)
             COLLECT_LIKE_TERMS(TREE_TO_MODIFY)
-            Console.WriteLine("FINISHED BOI V2")
+            Console.WriteLine("finished boi v2")
             Console.WriteLine(IN_ORDER(TREE_TO_MODIFY, True))
         End While
 
@@ -58,7 +60,13 @@ Class OPTIMISER : Inherits UTILITIES
     '//// THIS TO BE FINISHED!! ////  TAKE INTO ACCOUNT NEAGTIVE NUMBERS!
 
 
-    Private Sub SIMPLE_COLLECT_FRACTION_DENOMINATORS(NODE As TREE_NODE)
+    Private Sub FRACTION_COLLECTER_WRAPPER(NODE As TREE_NODE)
+        ' As the function 'SIMPLE_COLLECT_FRACTION_DENOMINATORS' does not level operators when it creates Addition Nodes.
+        SIMPLE_COLLECT_FRACTION_DENOMINATORS(NODE)
+        LEVEL_OPERATORS(NODE)
+    End Sub
+
+    Private Function SIMPLE_COLLECT_FRACTION_DENOMINATORS(NODE As TREE_NODE)
         ' This is made to combine fractions with the same denominator.
         ' It should be a fairly simple scenarior to solve, and the reason for its existence is for the like term collector to work properly.
         ' There are a lot more nuances to this solution, though, so I named this one 'Simple'.
@@ -69,11 +77,65 @@ Class OPTIMISER : Inherits UTILITIES
         ' I do not intend to make a fully featured simplifier, so this is fine.
         ' ~I'll leave it at that before I enter a self serving tangent and realise the enormity of what I'm attempting to 'partially' solve.
 
+        ' I decided to use a slightly more efficient method compared to COLLECT_LIKE_TERMS.
+        ' It doesn't really look at the node, but you can call it Postorder.
+
+        Dim ITERATION_ARRAY = {NODE.LEFT, NODE.RIGHT}
+        Dim NODE_LIST As New List(Of TREE_NODE) 'Used so that I can easily compare.
 
 
 
+        For Each ELEMENT As List(Of TREE_NODE) In ITERATION_ARRAY ' This will just loop through all the nodes and recursively call them.
+            ' To be fair I can probably change all the functions below to this form, but it will become a little annoying to read.
+            If NODE.VALUE = "+" Then
+                ' Imagine a circumstance where there is a + node and a bunch of variables. Even if I am performing a recursive call, eventually they will all terminate to the nodes in the + node.
+                ' Thus I will be able to list all the nodes that need to be compared, all while having it do it to all plus nodes, as it's recursive. 
+                ' Wunderbar!
+                For A As Integer = 0 To ELEMENT.Count() - 1
+                    If (A) <= (ELEMENT.Count - 1) Then
+                        Dim TREE_ELEMENT As TREE_NODE = COLLECT_LIKE_TERMS(ELEMENT(A))
+                        If TREE_ELEMENT.VALUE = "/" Then
+                            For B As Integer = 0 To NODE_LIST.Count() - 1 ' Same method as COLLECT_LIKE_TERMS
+                                Console.WriteLine("COMPAREDDDDD")
+                                If IN_ORDER(TREE_ELEMENT.RIGHT(0), True) = IN_ORDER(NODE_LIST(B).RIGHT(0), True) Then ' Comparing denominators.
+                                    Console.WriteLine("COMPAREDDDDD")
+                                    Dim NEW_NODE, ADD_NODE As New TREE_NODE
+                                    ADD_NODE.VALUE = "+"
 
-    End Sub
+                                    NEW_NODE.VALUE = "/"
+                                    NEW_NODE.RIGHT.Add(TREE_ELEMENT.RIGHT(0)) ' I add the common denominator
+                                    NEW_NODE.LEFT.Add(ADD_NODE) ' Division is binary, so I add a sum node for the two numerators being added.
+
+                                    NEW_NODE.LEFT(0).LEFT.Add(TREE_ELEMENT.LEFT(0)) ' I add the numerators to this sum node, in left and right.
+                                    NEW_NODE.LEFT(0).RIGHT.Add(NODE_LIST(B).LEFT(0))
+                                    ELEMENT.Remove(TREE_ELEMENT)
+                                    ITERATION_ARRAY(1).Remove(NODE_LIST(B)) ' Removes the node_list node from the array. Badly.
+                                    ITERATION_ARRAY(0).Remove(NODE_LIST(B))
+
+                                    NODE_LIST.RemoveAt(B)
+                                    NODE_LIST.Add(NEW_NODE) ' Adds the new node to be compared in the node list.
+
+                                    ELEMENT.Add(NEW_NODE) ' Adds the new node.
+                                    Exit For
+                                Else
+                                    NODE_LIST.Add(TREE_ELEMENT)
+                                End If
+                            Next
+                            If NODE_LIST.Count = 0 Then
+                                NODE_LIST.Add(TREE_ELEMENT)
+                            End If
+                        End If
+                    End If
+                Next
+            Else
+                For A As Integer = 0 To ELEMENT.Count() - 1
+                    COLLECT_LIKE_TERMS(ELEMENT(A)) 'Go down and down and down
+                Next
+            End If
+        Next
+
+        Return NODE
+    End Function
 
     Structure SEPERATED_TERMS
         Public COEFFICIENT As Integer
@@ -102,7 +164,7 @@ Class OPTIMISER : Inherits UTILITIES
         ' I consider this an 'Up to Down' Method.
 
         If NODE.VALUE = "+" Then ' Like terms can be collected.
-            For Each ELEMENT As List(Of TREE_NODE) In ITERATION_ARRAY ' This loops through the 
+            For Each ELEMENT As List(Of TREE_NODE) In ITERATION_ARRAY
                 Console.WriteLine("COUNTTT" & ELEMENT.Count)
                 For A As Integer = 0 To ELEMENT.Count() - 1 ' I am modifying the table as I loop, so this is a requirement. Either that, or cloning the table.
                     If (A) <= (ELEMENT.Count - 1) Then
@@ -114,7 +176,6 @@ Class OPTIMISER : Inherits UTILITIES
                             Console.WriteLine("NODE VALUE" & ELEMENT_A.VALUE)
                             For Each ELEMENT_B_TEMP As TREE_NODE In NODE_LIST ' I will now compare it to every node I HAVE looked at. (This is better than, say, comparing it to everything from the getgo.)
                                 Dim TERMS_A, TERMS_B As SEPERATED_TERMS
-                                Console.WriteLine("WHAT THE FUCK IS THIS " & IN_ORDER(ELEMENT_B_TEMP, True))
                                 TERMS_A = RETURN_VARIABLE_AND_COEFFICIENT(ELEMENT_A.CLONE())
                                 TERMS_B = RETURN_VARIABLE_AND_COEFFICIENT(ELEMENT_B_TEMP.CLONE())
                                 '  Console.WriteLine(IN_ORDER(ELEMENT_A, True) & " WHAT " & IN_ORDER(ELEMENT_B_TEMP, True))
@@ -135,7 +196,7 @@ Class OPTIMISER : Inherits UTILITIES
                                 End If
                             Next
 
-                            If Not ELEMENT_B Is Nothing Then ' As it is an 'each' loop, I will need to modify it outside of it. And yes I hate the 'IsNot Nothing'
+                            If Not ELEMENT_B Is Nothing Then ' As it is an 'each' loop, I will need to modify it outside of it. 
                                 Console.WriteLine(IN_ORDER(ELEMENT_A, True) & " the fukc" & IN_ORDER(ELEMENT_B, True))
                                 NODE_LIST.Remove(ELEMENT_B)
                                 If ELEMENT.Contains(ELEMENT_B) Then
@@ -157,14 +218,12 @@ Class OPTIMISER : Inherits UTILITIES
             Next
         End If
         If Not NODE.LEFT Is Nothing Then
-            Dim BACK_TRACK_B As Integer = 0
             For A As Integer = 0 To NODE.LEFT.Count() - 1
                 COLLECT_LIKE_TERMS(NODE.LEFT(A)) 'A simple traversal, which is nice.
             Next
         End If
 
         If Not NODE.RIGHT Is Nothing Then
-            Dim BACK_TRACK_B As Integer = 0
             For A As Integer = 0 To NODE.RIGHT.Count() - 1
                 COLLECT_LIKE_TERMS(NODE.RIGHT(A)) ' This goes down each path.
             Next
@@ -349,7 +408,7 @@ Class OPTIMISER : Inherits UTILITIES
 
     Private Sub REMOVE_NEGATIVITY(NODE As TREE_NODE)
 
-        ' This requires a post order traversal. Ie, I need to see each consitutent node in a root, right and left, and evaluate whether I can convert them.
+        ' This uses a post order traversal. Ie, I need to see each consitutent node in a root, right and left, and evaluate whether I can convert them.
         ' The simple requirement is such that their root is negative.
         ' In this case a new node is created such that it is the multiplication of -1 to the negative node.
         ' The negative root is then made positive and I continue the traversal. 
@@ -378,7 +437,7 @@ Class OPTIMISER : Inherits UTILITIES
     End Sub
 
     Private Sub PREPARATION_BY_UNIVERSAL_RULING(NODE As TREE_NODE)
-        '!!This assumes it IS a Binary Tree!!
+        '!!This assumes it is a Binary Tree!!
 
         ' To easily accomodate for variables and coefficients, I'll change all the numericals to a*1. 
         ' This is so that functions like 'COLLECT_LIKE_TERMS' can function with numbers. It assumes everything is in the form a*b, where a is the coefficient, and b the variable.
@@ -405,23 +464,22 @@ Class OPTIMISER : Inherits UTILITIES
 
         For Each ELEMENT As List(Of TREE_NODE) In ITERATION_ARRAY
             If ELEMENT.Count > 0 Then
-                Console.WriteLine("you fucking twat" & ELEMENT(0).VALUE)
                 If IsNumeric(ELEMENT(0).VALUE) Then ' Every single node is checked, so I won't need to loop through. 
+                    Console.WriteLine("numeric" & ELEMENT(0).VALUE)
                     Dim NEW_NODE, ONE_NODE As New TREE_NODE
                     NEW_NODE.VALUE = "*"
                     ONE_NODE.VALUE = "1"
                     NEW_NODE.RIGHT.Add(ONE_NODE) ' Adds the 1 multiplication
                     NEW_NODE.LEFT.Add(ELEMENT(0)) ' Adds the exisiting node.
                     ELEMENT.RemoveAt(0)
+                    Console.WriteLine("NEW NODE" & IN_ORDER(NEW_NODE, True))
                     ELEMENT.Add(NEW_NODE)
                 End If
                 If NODE.VALUE = "*" Then
-                    Console.WriteLine("THERES A FEKING TIMES")
                     ' This means it may have variables in it. 
                     ' I can modify it such that I loop through each of the variables, and if they have no left and right children, I can modify it to a power node.
                     ' This works as I assume I will traverse each node, so I will be looking at all the children. (He says with mocking self-assurance.)
                     For A As Integer = 0 To ELEMENT.Count - 1
-                        Console.WriteLine(ELEMENT(0).VALUE & " lol")
                         If ELEMENT(A).VALUE <> "+" And ELEMENT(A).VALUE <> "-" And ELEMENT(A).VALUE <> "/" And ELEMENT(A).VALUE <> "*" And ELEMENT(A).VALUE <> "^" And Not IsNumeric(ELEMENT(A).VALUE) Then ' Its just a check that means its a variable. There are other ways. 
                             Dim NEW_NODE, ONE_NODE As New TREE_NODE
                             NEW_NODE.VALUE = "^"
@@ -492,7 +550,7 @@ End Class
 Module MODULE1
 
     Sub MAIN()
-        Dim SIMPLIFIED As New SIMPLE_SIMPLIFY("(9x^2+10x^2+9yx^(5x+2)+99yx^(5x+2))/10+9x/10")
+        Dim SIMPLIFIED As New SIMPLE_SIMPLIFY("(9x/(10x+2x))+(10x/(10x+2x))+(10x/(10x+2x))")
         Console.WriteLine("SUM" & SIMPLIFIED.RESULT)
         Console.Read()
         Console.ReadKey()

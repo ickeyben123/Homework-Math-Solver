@@ -24,7 +24,7 @@ Class OPTIMISER : Inherits UTILITIES
         Console.WriteLine("FIRST BOI")
         Console.WriteLine(IN_ORDER(TO_MODIFY, True))
         TREE_TO_MODIFY = TO_MODIFY
-        'PREPARATION_BY_UNIVERSAL_RULING(TREE_TO_MODIFY)
+        PREPARATION_BY_UNIVERSAL_RULING(TREE_TO_MODIFY)
         Console.WriteLine(IN_ORDER(TREE_TO_MODIFY, True))
         While Not LAST_TREE = IN_ORDER(TREE_TO_MODIFY, True)
             LAST_TREE = IN_ORDER(TREE_TO_MODIFY, True)

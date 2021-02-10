@@ -24,7 +24,7 @@ Class OPTIMISER : Inherits UTILITIES
         Console.WriteLine("FIRST BOI")
         Console.WriteLine(IN_ORDER(TO_MODIFY, True))
         TREE_TO_MODIFY = TO_MODIFY
-        PREPARATION_BY_UNIVERSAL_RULING(TREE_TO_MODIFY)
+        'PREPARATION_BY_UNIVERSAL_RULING(TREE_TO_MODIFY)
         Console.WriteLine(IN_ORDER(TREE_TO_MODIFY, True))
         While Not LAST_TREE = IN_ORDER(TREE_TO_MODIFY, True)
             LAST_TREE = IN_ORDER(TREE_TO_MODIFY, True)
@@ -43,7 +43,9 @@ Class OPTIMISER : Inherits UTILITIES
             Console.WriteLine("finished boi v2")
             Console.WriteLine(IN_ORDER(TREE_TO_MODIFY, True))
         End While
-
+        MULTIPLIER_SIMPLIFIER(TREE_TO_MODIFY)
+        Console.WriteLine("finished boi v3")
+        Console.WriteLine(IN_ORDER(TREE_TO_MODIFY, True))
 
         ' Those optimisations can be considered 'trivial' based on the fact that they merely reorganise the expression. 
         ' I now need to collect like terms, simplify trivial terms like x^0 = 1, and distribute (a+b)(c+d).
@@ -59,6 +61,110 @@ Class OPTIMISER : Inherits UTILITIES
     ' //These are made to actually modify the expression.
     '//// THIS TO BE FINISHED!! ////  TAKE INTO ACCOUNT NEAGTIVE NUMBERS!
 
+
+    ' // Multiplication Functions
+
+    Enum MULTIPLIER_NUM ' Used by 'MULTIPLIER_SIMPLIFIER' 
+        SUM
+        OTHER
+    End Enum
+
+
+    Private Sub MULTIPLIER_SIMPLIFIER_CALCULATOR(TYPE As MULTIPLIER_NUM, ROOT_NODE As TREE_NODE, LEFT_MULTIPLIER_NODE As TREE_NODE, RIGHT_NODE As List(Of TREE_NODE))
+        ' Two Cases
+
+        ' This is setup in the way such that one single element node is sent (like 5x, in the form of a * or / node) and the rest of the RIGHT_NODE is sent.
+        ' The RIGHT_NODE is a list. 
+
+        ' In the case it isn't a + node, then it will just be, say, 5x * (a*b*c*...)
+        ' Remember that it is assumed that the LEFT_MULTIPLIER_NODE comes from a + node from the left.
+        ' In this instance it is very easy, and I will just move the resulting node (5*x*a*b*c*...) out of the + node and into the main LEFT NODE of the ROOT_NODE.
+        ' This is because I assume the ROOT_NODE will turn into a + node by the end of it.
+
+        ' In the case the RIGHT_NODE is a + NODE (ie it has 1 child and its a + NODE)
+        ' I will loop through the RIGHT_NODE(0) (the + node) and for each item I will form a * node of them combined.
+        ' I will then add this new node to the LEFT NODE/RIGHT NODE
+        ' This continues until all nodes are done.
+
+        Select Case TYPE
+            Case MULTIPLIER_NUM.SUM ' This means its A*(B+C+D...)
+                Dim ITERATION_ARRAY = {RIGHT_NODE(0).LEFT, RIGHT_NODE(0).RIGHT}
+                For Each ELEMENT As List(Of TREE_NODE) In ITERATION_ARRAY
+                    For Each NODE As TREE_NODE In ELEMENT
+                        Dim NEW_NODE As New TREE_NODE
+                        NEW_NODE.VALUE = "*"
+                        NEW_NODE.LEFT.Add(LEFT_MULTIPLIER_NODE)
+                        NEW_NODE.RIGHT.Add(NODE)
+                        ROOT_NODE.LEFT.Add(NEW_NODE) ' Adds the new node into the LEFT child of the root.
+                    Next
+                Next
+            Case MULTIPLIER_NUM.OTHER ' It is A*B
+                Dim NEW_NODE As New TREE_NODE
+                NEW_NODE.VALUE = "*"
+                NEW_NODE.LEFT.Add(LEFT_MULTIPLIER_NODE)
+                NEW_NODE.RIGHT = RIGHT_NODE
+                ROOT_NODE.LEFT.Add(NEW_NODE)
+        End Select
+
+    End Sub
+    Private Function MULTIPLIER_SIMPLIFIER(NODE As TREE_NODE)
+
+
+        Dim NODE_LIST As New List(Of TREE_NODE) 'Used so that I can easily compare.
+        Dim MODE As MULTIPLIER_NUM
+
+        ' The objective of this is to remove bracket multiplication.
+        ' Ie, when either a bracket is multiplied by a single value, or there are 2 brackets.
+        ' When such a scenarior exists, it will loop through the discovered bracket.
+
+        ' On this instance there are two occurences - 
+
+        ' <A> the other node is a * or a / node. This means I can merely create a multiplication node for each element being multiplied.
+        ' Ie A*(B+C) = A*B + B*C. I will transform the multiplication node into a + node to house the subsequent calculations.
+
+        ' <B> the other node is a + node.
+        ' This means I must loop through each individual node within the other.
+        ' Ie (A+B)(C+D) = (A*C + A*D) + (B*C + B*D). 
+
+
+        If NODE.RIGHT.Count = 1 Then
+            If NODE.RIGHT(0).VALUE = "+" Then
+                MODE = MULTIPLIER_NUM.SUM
+            Else
+                MODE = MULTIPLIER_NUM.OTHER
+            End If
+        Else
+            MODE = MULTIPLIER_NUM.OTHER
+        End If
+
+
+        If NODE.LEFT.Count = 1 Then
+            If NODE.LEFT(0).VALUE = "+" Then ' These two checks mean I have a (a+b+c+...) form for my left node
+                Dim ITERATION_ARRAY = {NODE.LEFT(0).LEFT, NODE.LEFT(0).RIGHT}
+                For Each ELEMENT As List(Of TREE_NODE) In ITERATION_ARRAY ' Sum Nodes have left and right.
+                    For A As Integer = 0 To ELEMENT.Count() - 1
+                        If Not ELEMENT(A) Is Nothing Then ' Makes sure it exists.
+                            Dim NODE_ELEMENT As TREE_NODE = MULTIPLIER_SIMPLIFIER(ELEMENT(A))
+
+                            ' I have the node I want to multiply.
+
+                            MULTIPLIER_SIMPLIFIER_CALCULATOR(MODE, NODE, NODE_ELEMENT, NODE.RIGHT)
+
+                        End If
+                    Next
+                Next
+                NODE.VALUE = "+"
+                NODE.LEFT.RemoveAt(0)
+                NODE.RIGHT = New List(Of TREE_NODE)
+            End If
+
+
+        End If
+
+
+        Return NODE
+
+    End Function
 
     Private Sub FRACTION_COLLECTER_WRAPPER(NODE As TREE_NODE)
         ' As the function 'SIMPLE_COLLECT_FRACTION_DENOMINATORS' does not level operators when it creates Addition Nodes.
@@ -78,7 +184,7 @@ Class OPTIMISER : Inherits UTILITIES
         ' ~I'll leave it at that before I enter a self serving tangent and realise the enormity of what I'm attempting to 'partially' solve.
 
         ' I decided to use a slightly more efficient method compared to COLLECT_LIKE_TERMS.
-        ' It doesn't really look at the node, but you can call it Postorder.
+        ' It is a pre-order traversal.
 
         Dim ITERATION_ARRAY = {NODE.LEFT, NODE.RIGHT}
         Dim NODE_LIST As New List(Of TREE_NODE) 'Used so that I can easily compare.
@@ -96,9 +202,7 @@ Class OPTIMISER : Inherits UTILITIES
                         Dim TREE_ELEMENT As TREE_NODE = COLLECT_LIKE_TERMS(ELEMENT(A))
                         If TREE_ELEMENT.VALUE = "/" Then
                             For B As Integer = 0 To NODE_LIST.Count() - 1 ' Same method as COLLECT_LIKE_TERMS
-                                Console.WriteLine("COMPAREDDDDD")
                                 If IN_ORDER(TREE_ELEMENT.RIGHT(0), True) = IN_ORDER(NODE_LIST(B).RIGHT(0), True) Then ' Comparing denominators.
-                                    Console.WriteLine("COMPAREDDDDD")
                                     Dim NEW_NODE, ADD_NODE As New TREE_NODE
                                     ADD_NODE.VALUE = "+"
 
@@ -158,15 +262,11 @@ Class OPTIMISER : Inherits UTILITIES
         Dim ITERATION_ARRAY = {NODE.LEFT, NODE.RIGHT}
         Dim NODE_LIST As New List(Of TREE_NODE) 'Used so that I can easily compare.
         Dim ADDED = False
-        If NODE.VALUE = "+" Then
-            Console.WriteLine("PARENT" & NODE.VALUE)
-        End If
         ' I consider this an 'Up to Down' Method.
 
         If NODE.VALUE = "+" Then ' Like terms can be collected.
             For Each ELEMENT As List(Of TREE_NODE) In ITERATION_ARRAY
-                Console.WriteLine("COUNTTT" & ELEMENT.Count)
-                For A As Integer = 0 To ELEMENT.Count() - 1 ' I am modifying the table as I loop, so this is a requirement. Either that, or cloning the table.
+                For A As Integer = 0 To ELEMENT.Count() - 1
                     If (A) <= (ELEMENT.Count - 1) Then
                         Console.WriteLine("LOOPING")
                         Dim ELEMENT_A As TREE_NODE = ELEMENT(A) ' The element I will compare against all the others within the NODE_LIST.
@@ -550,7 +650,7 @@ End Class
 Module MODULE1
 
     Sub MAIN()
-        Dim SIMPLIFIED As New SIMPLE_SIMPLIFY("(9x/(10x+2x))+(10x/(10x+2x))+(10x/(10x+2x))")
+        Dim SIMPLIFIED As New SIMPLE_SIMPLIFY("(9x+10y+9p+10u)*(81+10z)")
         Console.WriteLine("SUM" & SIMPLIFIED.RESULT)
         Console.Read()
         Console.ReadKey()

@@ -91,6 +91,7 @@ Class OPTIMISER : Inherits UTILITIES
                 Dim ITERATION_ARRAY = {RIGHT_NODE(0).LEFT, RIGHT_NODE(0).RIGHT}
                 For Each ELEMENT As List(Of TREE_NODE) In ITERATION_ARRAY
                     For Each NODE As TREE_NODE In ELEMENT
+                        Console.WriteLine("YOU FUCKING TWAT ARE YTOU WORK")
                         Dim NEW_NODE As New TREE_NODE
                         NEW_NODE.VALUE = "*"
                         NEW_NODE.LEFT.Add(LEFT_MULTIPLIER_NODE)
@@ -138,28 +139,56 @@ Class OPTIMISER : Inherits UTILITIES
         End If
 
 
-        If NODE.LEFT.Count = 1 Then
-            If NODE.LEFT(0).VALUE = "+" Then ' These two checks mean I have a (a+b+c+...) form for my left node
-                Dim ITERATION_ARRAY = {NODE.LEFT(0).LEFT, NODE.LEFT(0).RIGHT}
-                For Each ELEMENT As List(Of TREE_NODE) In ITERATION_ARRAY ' Sum Nodes have left and right.
-                    For A As Integer = 0 To ELEMENT.Count() - 1
-                        If Not ELEMENT(A) Is Nothing Then ' Makes sure it exists.
-                            Dim NODE_ELEMENT As TREE_NODE = MULTIPLIER_SIMPLIFIER(ELEMENT(A))
-
-                            ' I have the node I want to multiply.
-
-                            MULTIPLIER_SIMPLIFIER_CALCULATOR(MODE, NODE, NODE_ELEMENT, NODE.RIGHT)
-
-                        End If
-                    Next
-                Next
-                NODE.VALUE = "+"
-                NODE.LEFT.RemoveAt(0)
-                NODE.RIGHT = New List(Of TREE_NODE)
-            End If
-
-
+        If Not NODE.LEFT Is Nothing Then
+            For Each NODE_ELEMENT As TREE_NODE In NODE.LEFT
+                MULTIPLIER_SIMPLIFIER(NODE_ELEMENT)
+            Next
         End If
+        If Not NODE.RIGHT Is Nothing Then
+            For Each NODE_ELEMENT As TREE_NODE In NODE.RIGHT
+                MULTIPLIER_SIMPLIFIER(NODE_ELEMENT)
+            Next
+        End If
+
+
+        If NODE.VALUE = "*" Then
+            If NODE.LEFT.Count = 1 Then
+                If NODE.LEFT(0).VALUE = "+" Then ' These two checks mean I have a (a+b+c+...) form for my left node
+                    Dim ITERATION_ARRAY = {NODE.LEFT(0).LEFT, NODE.LEFT(0).RIGHT}
+                    For Each ELEMENT As List(Of TREE_NODE) In ITERATION_ARRAY ' Sum Nodes have left and right.
+                        For A As Integer = 0 To ELEMENT.Count() - 1
+                            If Not ELEMENT(A) Is Nothing Then ' Makes sure it exists.
+                                Dim NODE_ELEMENT As TREE_NODE = MULTIPLIER_SIMPLIFIER(ELEMENT(A))
+
+                                ' I have the node I want to multiply.
+
+                                MULTIPLIER_SIMPLIFIER_CALCULATOR(MODE, NODE, NODE_ELEMENT, NODE.RIGHT)
+
+                            End If
+                        Next
+                    Next
+                    NODE.VALUE = "+"
+                    NODE.LEFT.RemoveAt(0)
+                    NODE.RIGHT = New List(Of TREE_NODE)
+                End If
+
+            ElseIf NODE.LEFT.Count > 1 And NODE.RIGHT.Count = 1 Then ' This is the 1 scenario the top if statement doesn't take into account.
+                Dim BEFORE_COUNT As Integer = NODE.LEFT.Count
+                If NODE.RIGHT(0).VALUE = "+" Then ' These two checks mean I have a (a+b+c+...) form for my right node, ie A*(x+y+z)
+                    Console.WriteLine(IN_ORDER(NODE, True) & "lol")
+
+                    Dim NEW_NODE As New TREE_NODE
+                    NEW_NODE.VALUE = "*"
+                    NEW_NODE.LEFT = NODE.LEFT.GetRange(0, NODE.LEFT.Count - 2) ' Splits the newnode so it is displayed properly.
+                    NEW_NODE.RIGHT = NODE.LEFT.GetRange(NODE.LEFT.Count - 1, 1)
+
+                    MULTIPLIER_SIMPLIFIER_CALCULATOR(MODE, NODE, NEW_NODE.CLONE(), NODE.RIGHT)
+                    NODE.VALUE = "+"
+                    NODE.LEFT.RemoveRange(0, BEFORE_COUNT)
+                    NODE.RIGHT = New List(Of TREE_NODE)
+                End If
+            End If
+            End If
 
 
         Return NODE
@@ -170,6 +199,10 @@ Class OPTIMISER : Inherits UTILITIES
         ' As the function 'SIMPLE_COLLECT_FRACTION_DENOMINATORS' does not level operators when it creates Addition Nodes.
         SIMPLE_COLLECT_FRACTION_DENOMINATORS(NODE)
         LEVEL_OPERATORS(NODE)
+    End Sub
+
+    Private Sub CLEANUP_ADDITION(NODE As TREE_NODE)
+
     End Sub
 
     Private Function SIMPLE_COLLECT_FRACTION_DENOMINATORS(NODE As TREE_NODE)
@@ -650,7 +683,7 @@ End Class
 Module MODULE1
 
     Sub MAIN()
-        Dim SIMPLIFIED As New SIMPLE_SIMPLIFY("(9x+10y+9p+10u)*(81+10z)")
+        Dim SIMPLIFIED As New SIMPLE_SIMPLIFY("(9x+7y)*(2x)")
         Console.WriteLine("SUM" & SIMPLIFIED.RESULT)
         Console.Read()
         Console.ReadKey()

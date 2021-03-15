@@ -5,7 +5,8 @@
     Public Sub CREATE_TREE()
         Dim ROOT As New TREE_NODE
         For Each LETTER As String In OUTPUT_POSTFIX ' Loops through the converted expression list.
-            If Not OPERATORS.ContainsKey(LETTER) Then ' This means it is an operand, such as 300x.
+            Console.WriteLine("ITEMN" & LETTER)
+            If Not OPERATORS.ContainsKey(LETTER) Then ' This means it is an operand, such as 30.
                 ROOT = New TREE_NODE ' Creates a node for the operand
                 ROOT.VALUE = LETTER
                 RESULT_STACK.Push(ROOT) ' Pushes it onto the stack
@@ -21,7 +22,6 @@
     End Sub
 
     Sub New(Input As String)
-
         MyBase.New(Input)
     End Sub
 End Class

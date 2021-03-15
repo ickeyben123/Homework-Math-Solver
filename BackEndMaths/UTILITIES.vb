@@ -79,5 +79,7 @@ Class UTILITIES
         Next
         Return RETURN_STRING
     End Function
+
+
 End Class
 

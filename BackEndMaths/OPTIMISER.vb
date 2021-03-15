@@ -33,6 +33,7 @@ Class OPTIMISER : Inherits UTILITIES
             LEVEL_OPERATORS(TREE_TO_MODIFY) ' levels the operators, see function for more details.
             RATIONAL_SIMPLIFICATION(TREE_TO_MODIFY)
         End While
+        MULTIPLIER_SOLVER(TREE_TO_MODIFY)
         Console.WriteLine("finished boi")
         FRACTION_COLLECTER_WRAPPER(TREE_TO_MODIFY)
         Console.WriteLine(IN_ORDER(TREE_TO_MODIFY, True))
@@ -108,6 +109,59 @@ Class OPTIMISER : Inherits UTILITIES
         End Select
 
     End Sub
+
+    'Private Sub 
+
+    Private Sub MULTIPLIER_SOLVER(NODE As TREE_NODE)
+        ' Let A*B = C, when A and B are integers.
+
+        If Not NODE.LEFT Is Nothing Then
+            For Each NODE_ELEMENT As TREE_NODE In NODE.LEFT
+                MULTIPLIER_SIMPLIFIER(NODE_ELEMENT)
+            Next
+        End If
+        If Not NODE.RIGHT Is Nothing Then
+            For Each NODE_ELEMENT As TREE_NODE In NODE.RIGHT
+                MULTIPLIER_SIMPLIFIER(NODE_ELEMENT)
+            Next
+        End If
+        If NODE.VALUE = "*" Then
+            Dim ITERABLE_LIST = {NODE.RIGHT, NODE.LEFT}
+            Dim COUNT = 0
+
+            Dim TOTAL_LIST As New List(Of TREE_NODE)
+            TOTAL_LIST.AddRange(NODE.RIGHT)
+            TOTAL_LIST.AddRange(NODE.LEFT)
+            Dim INTEGERS = From INT In TOTAL_LIST Where IsNumeric(INT.VALUE)
+
+            Dim FINAL_INT As Integer = 1
+            For Each item As TREE_NODE In INTEGERS
+                Console.WriteLine("WHat the fuck are these ints" & item.VALUE)
+            Next
+            For A = 0 To INTEGERS.Count - 1
+                FINAL_INT *= INTEGERS(0).VALUE
+                TOTAL_LIST.RemoveAt(0)
+            Next
+
+            Dim NEW_INT As New TREE_NODE
+            NEW_INT.VALUE = FINAL_INT
+            TOTAL_LIST.Add(NEW_INT)
+            NODE.LEFT = New List(Of TREE_NODE)
+            NODE.RIGHT = New List(Of TREE_NODE)
+
+            If TOTAL_LIST.Count = 1 And IsNumeric(TOTAL_LIST(0).VALUE) Then
+                NODE.VALUE = TOTAL_LIST(0).VALUE
+            ElseIf TOTAL_LIST.Count = 2 Then
+                NODE.LEFT.Add(TOTAL_LIST(0))
+                NODE.RIGHT.Add(TOTAL_LIST(1))
+            ElseIf TOTAL_LIST.Count > 2 Then
+                NODE.LEFT = TOTAL_LIST.GetRange(0, TOTAL_LIST.Count - 2) ' Splits the newnode so it is displayed properly.
+                NODE.RIGHT = TOTAL_LIST.GetRange(TOTAL_LIST.Count - 1, 1)
+            End If
+
+        End If
+    End Sub
+
     Private Function MULTIPLIER_SIMPLIFIER(NODE As TREE_NODE)
 
 
@@ -152,6 +206,7 @@ Class OPTIMISER : Inherits UTILITIES
 
 
         If NODE.VALUE = "*" Then
+            Console.WriteLine("YES YOU FUCKING SHIT")
             If NODE.LEFT.Count = 1 Then
                 If NODE.LEFT(0).VALUE = "+" Then ' These two checks mean I have a (a+b+c+...) form for my left node
                     Dim ITERATION_ARRAY = {NODE.LEFT(0).LEFT, NODE.LEFT(0).RIGHT}
@@ -179,8 +234,13 @@ Class OPTIMISER : Inherits UTILITIES
 
                     Dim NEW_NODE As New TREE_NODE
                     NEW_NODE.VALUE = "*"
-                    NEW_NODE.LEFT = NODE.LEFT.GetRange(0, NODE.LEFT.Count - 2) ' Splits the newnode so it is displayed properly.
-                    NEW_NODE.RIGHT = NODE.LEFT.GetRange(NODE.LEFT.Count - 1, 1)
+                    If NODE.LEFT.Count = 2 Then
+                        NEW_NODE.LEFT.Add(NODE.LEFT(0).CLONE())
+                        NEW_NODE.RIGHT.Add(NODE.LEFT(1).CLONE())
+                    Else
+                        NEW_NODE.LEFT = NODE.LEFT.GetRange(0, NODE.LEFT.Count - 2) ' Splits the newnode so it is displayed properly.
+                        NEW_NODE.RIGHT = NODE.LEFT.GetRange(NODE.LEFT.Count - 1, 1)
+                    End If
 
                     MULTIPLIER_SIMPLIFIER_CALCULATOR(MODE, NODE, NEW_NODE.CLONE(), NODE.RIGHT)
                     NODE.VALUE = "+"
@@ -188,7 +248,7 @@ Class OPTIMISER : Inherits UTILITIES
                     NODE.RIGHT = New List(Of TREE_NODE)
                 End If
             End If
-            End If
+        End If
 
 
         Return NODE
@@ -309,6 +369,7 @@ Class OPTIMISER : Inherits UTILITIES
                             Console.WriteLine("NODE VALUE" & ELEMENT_A.VALUE)
                             For Each ELEMENT_B_TEMP As TREE_NODE In NODE_LIST ' I will now compare it to every node I HAVE looked at. (This is better than, say, comparing it to everything from the getgo.)
                                 Dim TERMS_A, TERMS_B As SEPERATED_TERMS
+                                Console.WriteLine("THE TOW FUCKING THINGS " & IN_ORDER(ELEMENT_A, True) & " the other FUCKING THING " & IN_ORDER(ELEMENT_B_TEMP, True))
                                 TERMS_A = RETURN_VARIABLE_AND_COEFFICIENT(ELEMENT_A.CLONE())
                                 TERMS_B = RETURN_VARIABLE_AND_COEFFICIENT(ELEMENT_B_TEMP.CLONE())
                                 '  Console.WriteLine(IN_ORDER(ELEMENT_A, True) & " WHAT " & IN_ORDER(ELEMENT_B_TEMP, True))
@@ -373,56 +434,56 @@ Class OPTIMISER : Inherits UTILITIES
         ' This will go through a node and remove the coefficient. It returns an array of the cleaned node and the coefficient.
         ' Do not use this on a + node, as that is not okay and hurts me in many ways.
         ' UPDATE -I can not be bothered to stop it from doing that, but it doesn't seem to do much except waste resources. Probably fine, but I won't test it to make sure. That would give me a reason to fix it.
-        Dim COEFFICIENT As Integer = 0
+        Dim COEFFICIENT As Integer = 1
         Dim RETURN_STRUCTURE As New SEPERATED_TERMS
 
         'Console.WriteLine("THIS IS WHAT WILL BE SOPRTED " & IN_ORDER(NODE, True))
-
-        If Not NODE.LEFT Is Nothing Then
-            For A As Integer = 0 To NODE.LEFT.Count() - 1
-                If A <= (NODE.LEFT.Count - 1) And NODE.VALUE <> "^" Then ' Makes sure it exists.
-                    Dim NODE_ELEMENT_S As SEPERATED_TERMS = RETURN_VARIABLE_AND_COEFFICIENT(NODE.LEFT(A))
-                    Dim NODE_ELEMENT As TREE_NODE = NODE_ELEMENT_S.VARIABLE
-                    COEFFICIENT += NODE_ELEMENT_S.COEFFICIENT
-                    If IsNumeric(NODE_ELEMENT.VALUE) Then
-                        NODE.LEFT.RemoveAt(A) ' Removes the coefficient
-                        COEFFICIENT = COEFFICIENT + NODE_ELEMENT.VALUE
-                        ' Console.WriteLine("addd 1" & COEFFICIENT)
-                    End If
-                    If NODE_ELEMENT.RIGHT.Count = 1 And NODE_ELEMENT.LEFT.Count = 1 Then
-                        If NODE_ELEMENT.VALUE = "*" And NODE_ELEMENT.LEFT(0).VALUE = "-1" Then ' This is a negative number
+        If Not NODE.VALUE = "+" Then
+            If Not NODE.LEFT Is Nothing Then
+                For A As Integer = 0 To NODE.LEFT.Count() - 1
+                    If A <= (NODE.LEFT.Count - 1) And NODE.VALUE <> "^" Then ' Makes sure it exists.
+                        Dim NODE_ELEMENT_S As SEPERATED_TERMS = RETURN_VARIABLE_AND_COEFFICIENT(NODE.LEFT(A))
+                        Dim NODE_ELEMENT As TREE_NODE = NODE_ELEMENT_S.VARIABLE
+                        COEFFICIENT *= NODE_ELEMENT_S.COEFFICIENT
+                        If IsNumeric(NODE_ELEMENT.VALUE) Then
                             NODE.LEFT.RemoveAt(A) ' Removes the coefficient
-                            COEFFICIENT = COEFFICIENT - NODE_ELEMENT.RIGHT(0).VALUE
-                            'Console.WriteLine("addd 2" & COEFFICIENT)
+                            COEFFICIENT *= NODE_ELEMENT.VALUE
+                            ' Console.WriteLine("addd 1" & COEFFICIENT)
+                        End If
+                        If NODE_ELEMENT.RIGHT.Count = 1 And NODE_ELEMENT.LEFT.Count = 1 Then
+                            If NODE_ELEMENT.VALUE = "*" And NODE_ELEMENT.LEFT(0).VALUE = "-1" Then ' This is a negative number
+                                NODE.LEFT.RemoveAt(A) ' Removes the coefficient
+                                COEFFICIENT *= -NODE_ELEMENT.RIGHT(0).VALUE
+                                'Console.WriteLine("addd 2" & COEFFICIENT)
+                            End If
                         End If
                     End If
-                End If
-            Next
-        End If
+                Next
+            End If
 
-        If Not NODE.RIGHT Is Nothing Then
-            For A As Integer = 0 To NODE.RIGHT.Count() - 1
-                If NODE.RIGHT.Count = 1 And IsNumeric(NODE.RIGHT(0).VALUE) Then ' This takes into account that a number will be in the form (a*b, where a is the coefficient and b "1"
-                    Exit For
-                End If
-                If A <= (NODE.RIGHT.Count - 1) And NODE.VALUE <> "^" Then  ' Makes sure it exists.
-                    Dim NODE_ELEMENT_S As SEPERATED_TERMS = RETURN_VARIABLE_AND_COEFFICIENT(NODE.RIGHT(A))
-                    Dim NODE_ELEMENT As TREE_NODE = NODE_ELEMENT_S.VARIABLE
-                    COEFFICIENT += NODE_ELEMENT_S.COEFFICIENT
-                    If IsNumeric(NODE_ELEMENT.VALUE) Then
-                        NODE.RIGHT.RemoveAt(A) ' Removes the coefficient
-                        COEFFICIENT = COEFFICIENT + NODE_ELEMENT.VALUE
+            If Not NODE.RIGHT Is Nothing Then
+                For A As Integer = 0 To NODE.RIGHT.Count() - 1
+                    If NODE.RIGHT.Count = 1 And IsNumeric(NODE.RIGHT(0).VALUE) Then ' This takes into account that a number will be in the form (a*b, where a is the coefficient and b "1"
+                        Exit For
                     End If
-                    If NODE_ELEMENT.RIGHT.Count = 1 And NODE_ELEMENT.LEFT.Count = 1 Then
-                        If NODE_ELEMENT.VALUE = "*" And NODE_ELEMENT.LEFT(0).VALUE = "-1" Then ' This is a negative number
+                    If A <= (NODE.RIGHT.Count - 1) And NODE.VALUE <> "^" Then  ' Makes sure it exists.
+                        Dim NODE_ELEMENT_S As SEPERATED_TERMS = RETURN_VARIABLE_AND_COEFFICIENT(NODE.RIGHT(A))
+                        Dim NODE_ELEMENT As TREE_NODE = NODE_ELEMENT_S.VARIABLE
+                        COEFFICIENT *= NODE_ELEMENT_S.COEFFICIENT
+                        If IsNumeric(NODE_ELEMENT.VALUE) Then
                             NODE.RIGHT.RemoveAt(A) ' Removes the coefficient
-                            COEFFICIENT = COEFFICIENT - NODE_ELEMENT.RIGHT(0).VALUE
+                            COEFFICIENT *= NODE_ELEMENT.VALUE
+                        End If
+                        If NODE_ELEMENT.RIGHT.Count = 1 And NODE_ELEMENT.LEFT.Count = 1 Then
+                            If NODE_ELEMENT.VALUE = "*" And NODE_ELEMENT.LEFT(0).VALUE = "-1" Then ' This is a negative number
+                                NODE.RIGHT.RemoveAt(A) ' Removes the coefficient
+                                COEFFICIENT *= -NODE_ELEMENT.RIGHT(0).VALUE
+                            End If
                         End If
                     End If
-                End If
-            Next
+                Next
+            End If
         End If
-
         'Console.WriteLine("RETURNED COF " & COEFFICIENT)
         Console.WriteLine("addd" & COEFFICIENT)
         RETURN_STRUCTURE.COEFFICIENT = COEFFICIENT
@@ -594,10 +655,10 @@ Class OPTIMISER : Inherits UTILITIES
                 PREPARATION_BY_UNIVERSAL_RULING(NODE_ELEMENT)
             Next
         End If
-
         For Each ELEMENT As List(Of TREE_NODE) In ITERATION_ARRAY
             If ELEMENT.Count > 0 Then
-                If IsNumeric(ELEMENT(0).VALUE) Then ' Every single node is checked, so I won't need to loop through. 
+                Dim CHECK As Dictionary(Of String, String) = MATCH_COLLECTION_TO_DICTIONARY(Regex.Matches(ELEMENT(0).VALUE, "[*,+,/,-]")) 'Looks for operators.
+                If (IsNumeric(ELEMENT(0).VALUE) Or CHECK.Count = 0) Then ' Every single node is checked, so I won't need to loop through. 
                     Console.WriteLine("numeric" & ELEMENT(0).VALUE)
                     Dim NEW_NODE, ONE_NODE As New TREE_NODE
                     NEW_NODE.VALUE = "*"
@@ -683,7 +744,7 @@ End Class
 Module MODULE1
 
     Sub MAIN()
-        Dim SIMPLIFIED As New SIMPLE_SIMPLIFY("(9x+7y)*(2x)")
+        Dim SIMPLIFIED As New SIMPLE_SIMPLIFY("50*(x+3)")
         Console.WriteLine("SUM" & SIMPLIFIED.RESULT)
         Console.Read()
         Console.ReadKey()

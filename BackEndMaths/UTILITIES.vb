@@ -80,6 +80,31 @@ Class UTILITIES
         Return RETURN_STRING
     End Function
 
+    Public Function LIST_OF_TREES_TO_STRING(LIST_NODES As List(Of TREE_NODE))
+        Dim NEW_NODE, ONE_NODE As TREE_NODE
+        NEW_NODE.VALUE = "*"
+        ONE_NODE.VALUE = "1"
+        NEW_NODE.RIGHT.Add(ONE_NODE)
+        NEW_NODE.LEFT.AddRange(LIST_NODES)
+        Return IN_ORDER(NEW_NODE, True)
+    End Function
+
+    Public Sub ALTERNATING_TREE_INSERTING(LIST_NODE, NODE)
+        ' Adds one to the left, one to the right, and so on.
+        ' ~left~right~left~right 
+
+        Dim ALTERNATING_EVEN_NUMBER As Integer = 1
+
+        For Each Item As TREE_NODE In LIST_NODE
+            If ALTERNATING_EVEN_NUMBER Mod 2 = 1 Then
+                NODE.LEFT.Add(Item)
+            Else
+                NODE.RIGHT.Add(Item)
+            End If
+            ALTERNATING_EVEN_NUMBER += 1
+        Next
+    End Sub
+
 
 End Class
 

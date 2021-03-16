@@ -22,6 +22,7 @@ Class POSTFIX_EXPRESSION : Inherits UTILITIES ' defines any expression that is w
         For Each CHAR_TO_COMBINE As String In INPUT
             COUNT += 1
             If (CONTINUE_ADD_UNTIL_OPERATOR And (IsNumeric(CHAR_TO_COMBINE) Or Char.IsLetter(CHAR_TO_COMBINE))) Or (IsNumeric(CHAR_TO_COMBINE) Or Char.IsLetter(CHAR_TO_COMBINE)) And Not OPERATORS.ContainsKey(CHAR_TO_COMBINE) And (CHAR_TO_COMBINE <> "(" Or CHAR_TO_COMBINE <> ")") Then
+                ' Console.WriteLine(CHAR_TO_COMBINE & " wtf")
                 If Not IsNumeric(CHAR_TO_COMBINE) Then ' Adds a multplication sign so that it can be converted to tree form
                     If TEMP_QUEUE.Count > 0 Then ' If the queue contains anything then it will append the letters together
                         TEMP_STRING_LIST.Add(QUEUE_TO_STRING(TEMP_QUEUE))
@@ -32,8 +33,10 @@ Class POSTFIX_EXPRESSION : Inherits UTILITIES ' defines any expression that is w
                             TEMP_STRING_LIST.Add("*")
                             TEMP_STRING_LIST.Add(CHAR_TO_COMBINE) ' Add any numbers or variables to the queue, to be    made as a single entity.
                         Else
-                            TEMP_STRING_LIST.Add(CHAR_TO_COMBINE) ' Add any numbers or variables to the queue, to be    made as a single entity.
+                            TEMP_QUEUE.Enqueue(CHAR_TO_COMBINE)
                         End If
+                    Else
+                        TEMP_QUEUE.Enqueue(CHAR_TO_COMBINE)
                     End If
                 Else
                     TEMP_QUEUE.Enqueue(CHAR_TO_COMBINE) ' Add any numbers or variables to the queue, to be made as a single entity.
@@ -42,8 +45,23 @@ Class POSTFIX_EXPRESSION : Inherits UTILITIES ' defines any expression that is w
                 If TEMP_QUEUE.Count > 0 Then ' If the queue contains anything then it will append the letters together
                     TEMP_STRING_LIST.Add(QUEUE_TO_STRING(TEMP_QUEUE)) ' Adds the created string, such as 13x.
                     TEMP_QUEUE = New Queue(Of String) ' Resets the stack.
+                    TEMP_STRING_LIST.Add(CHAR_TO_COMBINE)
+                Else
+                    If CHAR_TO_COMBINE = "-" Then
+                        If TEMP_STRING_LIST.Count > 0 Then
+                            Dim CHECK As Dictionary(Of String, String) = MATCH_COLLECTION_TO_DICTIONARY(Regex.Matches(TEMP_STRING_LIST(TEMP_STRING_LIST.Count - 1), "[*,+,/,-,(,)]"))
+                            If IsNumeric(TEMP_STRING_LIST(TEMP_STRING_LIST.Count - 1)) Or CHECK.Count = 0 Then
+                                TEMP_STRING_LIST.Add(CHAR_TO_COMBINE)
+                            Else
+                                TEMP_QUEUE.Enqueue(CHAR_TO_COMBINE)
+                            End If
+                        Else
+                            TEMP_QUEUE.Enqueue(CHAR_TO_COMBINE)
+                        End If
+                    Else
+                        TEMP_STRING_LIST.Add(CHAR_TO_COMBINE)
+                    End If
                 End If
-                TEMP_STRING_LIST.Add(CHAR_TO_COMBINE)
             End If
         Next
         If TEMP_QUEUE.Count > 0 Then

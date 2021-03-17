@@ -58,7 +58,7 @@ Class OPTIMISER : Inherits UTILITIES
             REMOVE_ONE_POWERS(TREE_TO_MODIFY)
             Console.WriteLine("finished boi v3")
             Console.WriteLine(IN_ORDER(TREE_TO_MODIFY, True))
-        'Next
+            'Next
         End While
         ' Those optimisations can be considered 'trivial' based on the fact that they merely reorganise the expression. 
         ' I now need to collect like terms, simplify trivial terms like x^0 = 1, and distribute (a+b)(c+d).
@@ -1015,7 +1015,7 @@ Class OPTIMISER : Inherits UTILITIES
                 If a < NODE.RIGHT.Count() Then
                     Dim NODE_ELEMENT As TREE_NODE = NODE.RIGHT(a)
                     Dim TYPE_RETURN As String = LEVEL_OPERATORS(NODE_ELEMENT) ' this is vital. it returns a +, * or nothing. #
-                    If type_return <> Nothing And type_return = NODE.VALUE Then
+                    If TYPE_RETURN <> Nothing And TYPE_RETURN = NODE.VALUE Then
                         Dim TO_MOVE_ELEMENT_TOTAL As New List(Of TREE_NODE)
                         TO_MOVE_ELEMENT_TOTAL.AddRange(NODE_ELEMENT.RIGHT)
                         TO_MOVE_ELEMENT_TOTAL.AddRange(NODE_ELEMENT.LEFT)

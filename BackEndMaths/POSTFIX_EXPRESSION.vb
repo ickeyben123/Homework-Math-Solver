@@ -13,7 +13,7 @@ Class POSTFIX_EXPRESSION : Inherits UTILITIES ' defines any expression that is w
     Protected OUTPUT_POSTFIX As List(Of String) = New List(Of String)
     Protected TRUE_EXPRESSION_LIST As List(Of String) = New List(Of String)
 
-    ' TO BE FIXED! 
+    'FIXED! 
     Function CONVERT_CHAR_ARRAY_TO_CORRECT_FORM(INPUT As String) ' This changes something like {1,3,x,+,3} into {13x,+,3}, otherwise I wouldn't be able to tell where the numbers end, easily.
         Dim TEMP_QUEUE As Queue(Of String) = New Queue(Of String) ' A temporary queue used to hold the numbers, say if I have {1,3,x,+}, it will add {1,3,x} to the stack, and stop at the +. 
         Dim TEMP_STRING_LIST As List(Of String) = New List(Of String)
@@ -22,15 +22,22 @@ Class POSTFIX_EXPRESSION : Inherits UTILITIES ' defines any expression that is w
         For Each CHAR_TO_COMBINE As String In INPUT
             COUNT += 1
             If (CONTINUE_ADD_UNTIL_OPERATOR And (IsNumeric(CHAR_TO_COMBINE) Or Char.IsLetter(CHAR_TO_COMBINE))) Or (IsNumeric(CHAR_TO_COMBINE) Or Char.IsLetter(CHAR_TO_COMBINE)) And Not OPERATORS.ContainsKey(CHAR_TO_COMBINE) And (CHAR_TO_COMBINE <> "(" Or CHAR_TO_COMBINE <> ")") Then
-                Console.WriteLine("aDDDDING" & CHAR_TO_COMBINE & COUNT)
+                ' Console.WriteLine(CHAR_TO_COMBINE & " wtf")
                 If Not IsNumeric(CHAR_TO_COMBINE) Then ' Adds a multplication sign so that it can be converted to tree form
                     If TEMP_QUEUE.Count > 0 Then ' If the queue contains anything then it will append the letters together
-                        TEMP_STRING_LIST.Add(QUEUE_TO_STRING(TEMP_QUEUE)) ' Adds the created string, such as 13x.
+                        TEMP_STRING_LIST.Add(QUEUE_TO_STRING(TEMP_QUEUE))
                         TEMP_QUEUE = New Queue(Of String) ' Resets the stack.
                     End If
-                    Console.WriteLine("adding thingggg" & CHAR_TO_COMBINE)
-                    TEMP_STRING_LIST.Add("*")
-                    TEMP_STRING_LIST.Add(CHAR_TO_COMBINE) ' Add any numbers or variables to the queue, to be    made as a single entity.
+                    If TEMP_STRING_LIST.Count >= 1 Then
+                        If TEMP_STRING_LIST(TEMP_STRING_LIST.Count - 1) <> "*" And TEMP_STRING_LIST(TEMP_STRING_LIST.Count - 1) <> "(" And TEMP_STRING_LIST(TEMP_STRING_LIST.Count - 1) <> "+" And TEMP_STRING_LIST(TEMP_STRING_LIST.Count - 1) <> "-" And TEMP_STRING_LIST(TEMP_STRING_LIST.Count - 1) <> "/" Then
+                            TEMP_STRING_LIST.Add("*")
+                            TEMP_STRING_LIST.Add(CHAR_TO_COMBINE) ' Add any numbers or variables to the queue, to be    made as a single entity.
+                        Else
+                            TEMP_QUEUE.Enqueue(CHAR_TO_COMBINE)
+                        End If
+                    Else
+                        TEMP_QUEUE.Enqueue(CHAR_TO_COMBINE)
+                    End If
                 Else
                     TEMP_QUEUE.Enqueue(CHAR_TO_COMBINE) ' Add any numbers or variables to the queue, to be made as a single entity.
                 End If
@@ -38,14 +45,31 @@ Class POSTFIX_EXPRESSION : Inherits UTILITIES ' defines any expression that is w
                 If TEMP_QUEUE.Count > 0 Then ' If the queue contains anything then it will append the letters together
                     TEMP_STRING_LIST.Add(QUEUE_TO_STRING(TEMP_QUEUE)) ' Adds the created string, such as 13x.
                     TEMP_QUEUE = New Queue(Of String) ' Resets the stack.
+                    TEMP_STRING_LIST.Add(CHAR_TO_COMBINE)
+                Else
+                    If CHAR_TO_COMBINE = "-" Then
+                        If TEMP_STRING_LIST.Count > 0 Then
+                            Dim CHECK As Dictionary(Of String, String) = MATCH_COLLECTION_TO_DICTIONARY(Regex.Matches(TEMP_STRING_LIST(TEMP_STRING_LIST.Count - 1), "[*,+,/,-,(,)]"))
+                            If IsNumeric(TEMP_STRING_LIST(TEMP_STRING_LIST.Count - 1)) Or CHECK.Count = 0 Then
+                                TEMP_STRING_LIST.Add(CHAR_TO_COMBINE)
+                            Else
+                                TEMP_QUEUE.Enqueue(CHAR_TO_COMBINE)
+                            End If
+                        Else
+                            TEMP_QUEUE.Enqueue(CHAR_TO_COMBINE)
+                        End If
+                    Else
+                        TEMP_STRING_LIST.Add(CHAR_TO_COMBINE)
+                    End If
                 End If
-                Console.WriteLine("ADDING OPERATOR" & CHAR_TO_COMBINE)
-                TEMP_STRING_LIST.Add(CHAR_TO_COMBINE)
             End If
         Next
         If TEMP_QUEUE.Count > 0 Then
             TEMP_STRING_LIST.Add(QUEUE_TO_STRING(TEMP_QUEUE)) ' Adds the created string, such as 13x.
         End If
+        For Each ELEMENT As String In TEMP_STRING_LIST
+            'Console.WriteLine("FINISH2" & ELEMENT)
+        Next
         Return TEMP_STRING_LIST ' Sets the global variable.
     End Function
 
@@ -55,7 +79,7 @@ Class POSTFIX_EXPRESSION : Inherits UTILITIES ' defines any expression that is w
         Dim COUNT As Integer = 0
         TRUE_EXPRESSION_LIST = CONVERT_CHAR_ARRAY_TO_CORRECT_FORM(STRING_ARRAY)
         For Each ELEMENT As String In TRUE_EXPRESSION_LIST
-            Console.WriteLine("FINISH" & ELEMENT)
+            'Console.WriteLine("FINISH" & ELEMENT)
         Next
         INFIX_TO_POSTFIX() ' CONVERTS POSTFIX TO INFIX
 
@@ -80,7 +104,7 @@ Class POSTFIX_EXPRESSION : Inherits UTILITIES ' defines any expression that is w
             ElseIf OPERATORS.ContainsKey(CURRENT_CHAR) Then ' if it is an operator
                 Dim OPERATOR_DATA As Array = OPERATORS.Item(CURRENT_CHAR)
                 If OPERATOR_STACK.Count > 0 Then
-                    If OPERATOR_STACK.Peek() <> "(" Then ' this is placed outside due to the operators dictionary not contains "(", thus the while loop would error out.
+                    If OPERATOR_STACK.Peek() <> "(" Then ' this is placed outside due to the operators dictionary not containing "(", thus the while loop would error out.
                         While OPERATORS.Item(OPERATOR_STACK.Peek())(0) > OPERATOR_DATA(0) Or
                             (OPERATORS.Item(OPERATOR_STACK.Peek())(0) = OPERATOR_DATA(0) And OPERATOR_DATA(1) = False) ' this will pop the stack with any operations that cannot continue to be held when this operator is pushed onto the stack
                             ' the workings include, if the current top stack operator has a higher precedence or if the operator has the same precedence and the token (the one being added) is left (false) in associativity

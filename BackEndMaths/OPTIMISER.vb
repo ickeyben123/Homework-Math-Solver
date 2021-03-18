@@ -9,10 +9,8 @@ End Enum
 Class OPTIMISER : Inherits UTILITIES
 
     ' General class for optimising trees. 
-    Private TREE_TO_MODIFY As TREE_NODE
-
-
-
+    Public TREE_TO_MODIFY As TREE_NODE
+    '' FIX LIKE TERM SUMMING AS IT BREAKS THE POWER ADDITION
     Public Function OPTIMISE_TREE(TO_MODIFY As TREE_NODE)
         ' This function is important in simplifying the tree expressions. The disadvantage of trees are such that certain multiplicative expressions can be interpreted in multiple ways. 
         ' Division and Negative nodes are not optimal for a computer to handle. This function/(collection of functions) aims to solve these issues by rearranging nodes into a form that is fundamentally the same.
@@ -21,39 +19,52 @@ Class OPTIMISER : Inherits UTILITIES
         ' Change the negative nodes to positive nodes, where the negative value is now a multiply node with -1 and the actual value.
         ' Level operators. Operators like + and * can be changed to have many children, instead of the binary two. This is why removing - and simplifying / operators are important.
         Dim LAST_TREE As String
-        Console.WriteLine("FIRST BOI")
-        Console.WriteLine(IN_ORDER(TO_MODIFY, True))
-        TREE_TO_MODIFY = TO_MODIFY
-        PREPARATION_BY_UNIVERSAL_RULING(TREE_TO_MODIFY)
-        Console.WriteLine(IN_ORDER(TREE_TO_MODIFY, True))
-        While Not LAST_TREE = IN_ORDER(TREE_TO_MODIFY, True)
-            LAST_TREE = IN_ORDER(TREE_TO_MODIFY, True)
-            REMOVE_NEGATIVITY(TREE_TO_MODIFY) ' removes the negative roots.
-            TREE_TO_MODIFY = TO_MODIFY
-            LEVEL_OPERATORS(TREE_TO_MODIFY) ' levels the operators, see function for more details.
-            RATIONAL_SIMPLIFICATION(TREE_TO_MODIFY)
-        End While
-        Console.WriteLine("finished boi")
-        FRACTION_COLLECTER_WRAPPER(TREE_TO_MODIFY)
-        Console.WriteLine(IN_ORDER(TREE_TO_MODIFY, True))
-        LAST_TREE = ""
-        While Not LAST_TREE = IN_ORDER(TREE_TO_MODIFY, True)
-            LAST_TREE = IN_ORDER(TREE_TO_MODIFY, True)
-            COLLECT_LIKE_TERMS(TREE_TO_MODIFY)
-            Console.WriteLine("finished boi v2")
-            Console.WriteLine(IN_ORDER(TREE_TO_MODIFY, True))
-        End While
-        MULTIPLIER_SIMPLIFIER(TREE_TO_MODIFY)
-        Console.WriteLine("finished boi v3")
-        Console.WriteLine(IN_ORDER(TREE_TO_MODIFY, True))
 
+        Dim GLOBAL_LAST_TREE As String
+
+        TREE_TO_MODIFY = TO_MODIFY
+        For I = 1 To 10
+            ' While Not GLOBAL_LAST_TREE = IN_ORDER(TREE_TO_MODIFY, True)
+            GLOBAL_LAST_TREE = IN_ORDER(TREE_TO_MODIFY, True)
+            'Console.WriteLine("THE DHDHDHDHDHD" & GLOBAL_LAST_TREE)
+            PREPARATION_BY_TIMES_RULING(TREE_TO_MODIFY)
+            TREE_TO_MODIFY = TO_MODIFY
+            REMOVE_NEGATIVITY(TREE_TO_MODIFY)
+            MULTIPLIER_SIMPLIFIER(TREE_TO_MODIFY)
+            While Not LAST_TREE = IN_ORDER(TREE_TO_MODIFY, True)
+                LAST_TREE = IN_ORDER(TREE_TO_MODIFY, True)
+                REMOVE_NEGATIVITY(TREE_TO_MODIFY) ' removes the negative roots.
+                TREE_TO_MODIFY = TO_MODIFY
+                LEVEL_OPERATORS(TREE_TO_MODIFY) ' levels the operators, see function for more details.
+                PREPERATION_POWER_RULING(TREE_TO_MODIFY)
+                RATIONAL_SIMPLIFICATION(TREE_TO_MODIFY)
+            End While
+            FRACTION_COLLECTER_WRAPPER(TREE_TO_MODIFY)
+            LAST_TREE = ""
+            While Not LAST_TREE = IN_ORDER(TREE_TO_MODIFY, True)
+                LAST_TREE = IN_ORDER(TREE_TO_MODIFY, True)
+                PREPARATION_BY_TIMES_RULING(TREE_TO_MODIFY)
+                COLLECT_LIKE_TERMS(TREE_TO_MODIFY)
+            End While
+            'Console.WriteLine("finished boi v2")
+            'Console.WriteLine(IN_ORDER(TREE_TO_MODIFY, True))
+            POWER_SOLVER(TREE_TO_MODIFY)
+            'Console.WriteLine("finished boi v2")
+            'Console.WriteLine(IN_ORDER(TREE_TO_MODIFY, True))
+            MULTIPLIER_WRAPPER_SOLVER(TREE_TO_MODIFY)
+            CLEANUP_FINALISER(TREE_TO_MODIFY)
+            REMOVE_LOOSE_ADDITIONS(TREE_TO_MODIFY)
+            REMOVE_ONE_POWERS(TREE_TO_MODIFY)
+            'Console.WriteLine("finished boi v3")
+            'Console.WriteLine(IN_ORDER(TREE_TO_MODIFY, True))
+        Next
+
+        '  End While
         ' Those optimisations can be considered 'trivial' based on the fact that they merely reorganise the expression. 
         ' I now need to collect like terms, simplify trivial terms like x^0 = 1, and distribute (a+b)(c+d).
         ' These are supposedly more complicated.
 
-
-
-        Return True
+        Return TREE_TO_MODIFY
     End Function
 
 
@@ -102,11 +113,281 @@ Class OPTIMISER : Inherits UTILITIES
                 Dim NEW_NODE As New TREE_NODE
                 NEW_NODE.VALUE = "*"
                 NEW_NODE.LEFT.Add(LEFT_MULTIPLIER_NODE)
-                NEW_NODE.RIGHT = RIGHT_NODE
+                NEW_NODE.RIGHT.AddRange(RIGHT_NODE)
                 ROOT_NODE.LEFT.Add(NEW_NODE)
         End Select
 
     End Sub
+
+    'Private Sub 
+
+
+    Private Sub MULTIPLIER_WRAPPER_SOLVER(NODE As TREE_NODE)
+        LEVEL_OPERATORS(NODE)
+        MULTIPLIER_SOLVER(NODE)
+    End Sub
+
+    ' The 'Give Up' Subroutines
+    ' Madness congealed
+    ' Not made for elegance or efficiency TM.
+
+
+    Private Sub REMOVE_ONE_POWERS(NODE As TREE_NODE)
+        If Not NODE.LEFT Is Nothing Then
+            For Each NODE_ELEMENT As TREE_NODE In NODE.LEFT
+                REMOVE_ONE_POWERS(NODE_ELEMENT)
+            Next
+        End If
+        If Not NODE.RIGHT Is Nothing Then
+            For Each NODE_ELEMENT As TREE_NODE In NODE.RIGHT
+                REMOVE_ONE_POWERS(NODE_ELEMENT)
+            Next
+        End If
+
+
+        If NODE.VALUE = "^" Then
+            If NODE.RIGHT(0).VALUE = "1" Then
+                NODE.VALUE = NODE.LEFT(0).VALUE
+                If Not IsNumeric(NODE.VALUE) Then
+                    Dim TOTAL_NODE As New List(Of TREE_NODE)
+                    TOTAL_NODE.AddRange(NODE.LEFT(0).LEFT)
+                    TOTAL_NODE.AddRange(NODE.LEFT(0).RIGHT)
+                    NODE.LEFT.RemoveRange(0, NODE.LEFT.Count)
+                    NODE.RIGHT.RemoveRange(0, NODE.RIGHT.Count)
+                    ALTERNATING_TREE_INSERTING(TOTAL_NODE, NODE)
+                End If
+            End If
+        End If
+
+    End Sub
+
+    Private Sub REMOVE_ZERO_MULTIPLIERS(NODE As TREE_NODE)
+        If Not NODE.LEFT Is Nothing Then
+            For Each NODE_ELEMENT As TREE_NODE In NODE.LEFT
+                REMOVE_LOOSE_ADDITIONS(NODE_ELEMENT)
+            Next
+        End If
+        If Not NODE.RIGHT Is Nothing Then
+            For Each NODE_ELEMENT As TREE_NODE In NODE.RIGHT
+                REMOVE_LOOSE_ADDITIONS(NODE_ELEMENT)
+            Next
+        End If
+        Dim ITERABLE = {NODE.LEFT, NODE.RIGHT}
+
+
+        If NODE.VALUE = "+" Then
+            For Each ELEMENT As List(Of TREE_NODE) In ITERABLE
+                For A = 0 To ELEMENT.Count - 1
+                    If ELEMENT(A).VALUE = "0" Then
+
+                    End If
+                Next
+            Next
+        End If
+    End Sub
+
+    Private Sub REMOVE_LOOSE_ADDITIONS(NODE As TREE_NODE)
+        If Not NODE.LEFT Is Nothing Then
+            For Each NODE_ELEMENT As TREE_NODE In NODE.LEFT
+                REMOVE_LOOSE_ADDITIONS(NODE_ELEMENT)
+            Next
+        End If
+        If Not NODE.RIGHT Is Nothing Then
+            For Each NODE_ELEMENT As TREE_NODE In NODE.RIGHT
+                REMOVE_LOOSE_ADDITIONS(NODE_ELEMENT)
+            Next
+        End If
+
+        If NODE.VALUE = "+" Then
+            If (NODE.LEFT.Count + NODE.RIGHT.Count) <= 1 Then
+                Dim CHOSEN_NODE As TREE_NODE
+                If NODE.LEFT.Count = 1 Then
+                    CHOSEN_NODE = NODE.LEFT(0)
+                Else
+                    CHOSEN_NODE = NODE.RIGHT(0)
+                End If
+                NODE.VALUE = CHOSEN_NODE.VALUE
+                If IsNumeric(CHOSEN_NODE.VALUE) Then
+                    NODE.LEFT.RemoveRange(0, NODE.LEFT.Count)
+                    NODE.RIGHT.RemoveRange(0, NODE.RIGHT.Count)
+                Else
+                    Dim NEW_READDING_LIST As New List(Of TREE_NODE)
+                    NEW_READDING_LIST.AddRange(CHOSEN_NODE.LEFT)
+                    NEW_READDING_LIST.AddRange(CHOSEN_NODE.RIGHT)
+                    NODE.LEFT.RemoveRange(0, NODE.LEFT.Count)
+                    NODE.RIGHT.RemoveRange(0, NODE.RIGHT.Count)
+                    ALTERNATING_TREE_INSERTING(NEW_READDING_LIST, NODE)
+                End If
+            End If
+        End If
+    End Sub
+
+    Private Sub CLEANUP_FINALISER(NODE As TREE_NODE)
+
+        ' Let A*1 = A
+
+        If Not NODE.LEFT Is Nothing Then
+            For Each NODE_ELEMENT As TREE_NODE In NODE.LEFT
+                CLEANUP_FINALISER(NODE_ELEMENT)
+            Next
+        End If
+        If Not NODE.RIGHT Is Nothing Then
+            For Each NODE_ELEMENT As TREE_NODE In NODE.RIGHT
+                CLEANUP_FINALISER(NODE_ELEMENT)
+            Next
+        End If
+
+
+
+        If NODE.VALUE = "*" Then
+            If NODE.RIGHT.Count = 1 Then
+                ' Console.WriteLine("FUCKJING HELL WHY ARE YOU HERRE" & ELEMENT(A).RIGHT(0).VALUE)
+                If NODE.RIGHT(0).VALUE = "1" Then
+                    NODE.RIGHT.RemoveAt(0)
+                    If Not NODE.LEFT.Count = 1 Then
+                        Dim NEW_READDING_LIST As New List(Of TREE_NODE)
+                        NEW_READDING_LIST.AddRange(NODE.LEFT)
+                        NODE.LEFT.RemoveRange(0, NODE.LEFT.Count)
+                        ALTERNATING_TREE_INSERTING(NEW_READDING_LIST, NODE) 'Adds it via alternate insertion (even number of items on left and right) so it displays correctly.
+                    ElseIf NODE.LEFT.Count = 1 And IsNumeric(NODE.LEFT(0).VALUE) Then
+                        NODE.VALUE = NODE.LEFT(0).VALUE
+                        NODE.LEFT.RemoveAt(0)
+                    Else
+                        NODE.VALUE = NODE.LEFT(0).VALUE
+                        Dim NEW_READDING_LIST As New List(Of TREE_NODE)
+                        NEW_READDING_LIST.AddRange(NODE.LEFT(0).LEFT)
+                        NEW_READDING_LIST.AddRange(NODE.LEFT(0).RIGHT)
+                        NODE.LEFT.RemoveRange(0, NODE.LEFT.Count)
+                        ALTERNATING_TREE_INSERTING(NEW_READDING_LIST, NODE)
+                    End If
+                End If
+            End If
+        End If
+
+    End Sub
+
+    Private Sub POWER_SOLVER(NODE As TREE_NODE)
+        ' Let x^n*x^b = x^(n+b)
+
+        If Not NODE.LEFT Is Nothing Then
+            For Each NODE_ELEMENT As TREE_NODE In NODE.LEFT
+                POWER_SOLVER(NODE_ELEMENT)
+            Next
+        End If
+        If Not NODE.RIGHT Is Nothing Then
+            For Each NODE_ELEMENT As TREE_NODE In NODE.RIGHT
+                POWER_SOLVER(NODE_ELEMENT)
+            Next
+        End If
+
+        Dim NODE_LIST As New List(Of TREE_NODE)
+
+        If NODE.VALUE = "*" Then
+            Dim ITERABLE = {NODE.LEFT, NODE.RIGHT}
+            For Each ELEMENT As List(Of TREE_NODE) In ITERABLE
+                Dim DOWN_BREAK As Integer = 0
+                For A As Integer = 0 To ELEMENT.Count - 1
+                    Dim LESSENED_INDEX As Integer = A - DOWN_BREAK
+                    If (LESSENED_INDEX) <= ELEMENT.Count - 1 Then ' Makes sure that it is within bounds ;)
+                        If ELEMENT(LESSENED_INDEX).VALUE = "^" Then
+                            NODE_LIST.Add(ELEMENT(LESSENED_INDEX))
+                            ELEMENT.RemoveAt(LESSENED_INDEX)
+                            DOWN_BREAK += 1 ' Shifts the loop the left by 1, so that we ain't losing any looping buddies :0
+                        End If
+                    End If
+                Next
+            Next
+            ' "^" nodes are binary, so we can only have 0 indexes for left and right.
+            For Each element In NODE_LIST
+            Next
+            Dim GROUPED = NODE_LIST.GroupBy(Function(x) IN_ORDER(x.LEFT(0), True)) ' Off did the computer go, for this program was trying to turn it into a toaster. (It groups each by the same variables, ie {{x},{x^3,x^2,x^1}})
+            For Each GROUP In GROUPED ' We gonna loop through it all baby
+                Dim MAIN_VARIABLE As TREE_NODE = GROUP.ElementAt(0).LEFT(0)
+                Dim MAIN_POWER As New TREE_NODE
+                MAIN_POWER.VALUE = "+" ' This is weird but I will just solve for this + node like I do for an input :)
+
+                Dim ALTERNATING_EVEN_NUMBER As Integer = 1
+
+                For Each Item As TREE_NODE In GROUP
+                    If ALTERNATING_EVEN_NUMBER Mod 2 = 1 Then
+                        MAIN_POWER.LEFT.Add(Item.RIGHT(0))
+                    Else
+                        MAIN_POWER.RIGHT.Add(Item.RIGHT(0))
+                    End If
+                    ALTERNATING_EVEN_NUMBER += 1
+                Next
+                'LEVEL_OPERATORS(MAIN_POWER)
+
+                ' Dim SIMPLIFIED_TREE_NODE As TREE_NODE = OPTIMISE_TREE(MAIN_POWER.CLONE) ' Optimise the tree. Technically recursively. Gosh.
+                ' Console.WriteLine("IDKFv2" & IN_ORDER(SIMPLIFIED_TREE_NODE, True))
+                Dim FINAL_NODE As New TREE_NODE
+                FINAL_NODE.VALUE = "^"
+                FINAL_NODE.LEFT.Insert(0, MAIN_VARIABLE)
+                FINAL_NODE.RIGHT.Insert(0, MAIN_POWER)
+                If NODE.LEFT.Count = 0 Then
+                    NODE.LEFT.Add(FINAL_NODE)
+                Else
+                    NODE.RIGHT.Add(FINAL_NODE)
+                End If
+            Next
+
+
+
+
+        End If
+    End Sub
+
+    Private Sub MULTIPLIER_SOLVER(NODE As TREE_NODE)
+        ' Let A*B = C, when A and B are integers.
+
+        If Not NODE.LEFT Is Nothing Then
+            For Each NODE_ELEMENT As TREE_NODE In NODE.LEFT
+                MULTIPLIER_SOLVER(NODE_ELEMENT)
+            Next
+        End If
+        If Not NODE.RIGHT Is Nothing Then
+            For Each NODE_ELEMENT As TREE_NODE In NODE.RIGHT
+                MULTIPLIER_SOLVER(NODE_ELEMENT)
+            Next
+        End If
+        If NODE.VALUE = "*" Then
+            Dim TOTAL_LIST As New List(Of TREE_NODE)
+            TOTAL_LIST.AddRange(NODE.RIGHT)
+            TOTAL_LIST.AddRange(NODE.LEFT)
+            Dim INTEGERS = From INT In TOTAL_LIST Where IsNumeric(INT.VALUE)
+            Dim FINAL_INT As Integer = 1
+            For Each item In TOTAL_LIST
+            Next
+            For A = 0 To INTEGERS.Count - 1
+                FINAL_INT *= INTEGERS(0).VALUE
+                TOTAL_LIST.Remove(INTEGERS(0))
+            Next
+
+            Dim NEW_INT As New TREE_NODE
+            NEW_INT.VALUE = FINAL_INT
+            TOTAL_LIST.Add(NEW_INT)
+            NODE.LEFT = New List(Of TREE_NODE)
+            NODE.RIGHT = New List(Of TREE_NODE)
+
+            If TOTAL_LIST.Count = 1 And IsNumeric(TOTAL_LIST(0).VALUE) Then
+                NODE.VALUE = TOTAL_LIST(0).VALUE
+            ElseIf TOTAL_LIST.Count = 2 Then
+                NODE.LEFT.Add(TOTAL_LIST(0))
+                NODE.RIGHT.Add(TOTAL_LIST(1))
+            ElseIf TOTAL_LIST.Count = 3 Then
+                NODE.LEFT = TOTAL_LIST.GetRange(0, TOTAL_LIST.Count - 1) ' Splits the newnode so it is displayed properly.
+                NODE.RIGHT = TOTAL_LIST.GetRange(TOTAL_LIST.Count - 1, 1)
+            ElseIf TOTAL_LIST.Count > 3 Then
+                NODE.LEFT = TOTAL_LIST.GetRange(0, TOTAL_LIST.Count - 2) ' Splits the newnode so it is displayed properly.
+                NODE.RIGHT = TOTAL_LIST.GetRange(TOTAL_LIST.Count - 1, 1)
+            End If
+
+        End If
+    End Sub
+
+
+    ' End of the 'Give Up' Subroutines
+
     Private Function MULTIPLIER_SIMPLIFIER(NODE As TREE_NODE)
 
 
@@ -138,27 +419,69 @@ Class OPTIMISER : Inherits UTILITIES
         End If
 
 
-        If NODE.LEFT.Count = 1 Then
-            If NODE.LEFT(0).VALUE = "+" Then ' These two checks mean I have a (a+b+c+...) form for my left node
-                Dim ITERATION_ARRAY = {NODE.LEFT(0).LEFT, NODE.LEFT(0).RIGHT}
-                For Each ELEMENT As List(Of TREE_NODE) In ITERATION_ARRAY ' Sum Nodes have left and right.
-                    For A As Integer = 0 To ELEMENT.Count() - 1
-                        If Not ELEMENT(A) Is Nothing Then ' Makes sure it exists.
-                            Dim NODE_ELEMENT As TREE_NODE = MULTIPLIER_SIMPLIFIER(ELEMENT(A))
+        If Not NODE.LEFT Is Nothing Then
+            For Each NODE_ELEMENT As TREE_NODE In NODE.LEFT
+                MULTIPLIER_SIMPLIFIER(NODE_ELEMENT)
+            Next
+        End If
+        If Not NODE.RIGHT Is Nothing Then
+            For Each NODE_ELEMENT As TREE_NODE In NODE.RIGHT
+                MULTIPLIER_SIMPLIFIER(NODE_ELEMENT)
+            Next
+        End If
 
-                            ' I have the node I want to multiply.
 
-                            MULTIPLIER_SIMPLIFIER_CALCULATOR(MODE, NODE, NODE_ELEMENT, NODE.RIGHT)
+        If NODE.VALUE = "*" Then
+            ' Console.WriteLine("DETECTED THE SHIT" & IN_ORDER(NODE, True) & NODE.LEFT.Count & NODE.RIGHT.Count & NODE.RIGHT(0).VALUE)
+            If NODE.LEFT.Count = 1 Then
+                If NODE.LEFT(0).VALUE = "+" Then ' These two checks mean I have a (a+b+c+...) form for my left node
 
-                        End If
+                    Dim ITERATION_ARRAY = {NODE.LEFT(0).LEFT, NODE.LEFT(0).RIGHT}
+                    For Each ELEMENT As List(Of TREE_NODE) In ITERATION_ARRAY ' Sum Nodes have left and right.
+                        For A As Integer = 0 To ELEMENT.Count() - 1
+                            If Not ELEMENT(A) Is Nothing Then ' Makes sure it exists.
+                                Dim NODE_ELEMENT As TREE_NODE = ELEMENT(A)
+
+                                ' I have the node I want to multiply.
+
+                                MULTIPLIER_SIMPLIFIER_CALCULATOR(MODE, NODE, NODE_ELEMENT, NODE.RIGHT)
+
+                            End If
+                        Next
                     Next
-                Next
-                NODE.VALUE = "+"
-                NODE.LEFT.RemoveAt(0)
-                NODE.RIGHT = New List(Of TREE_NODE)
+                    NODE.VALUE = "+"
+                    NODE.LEFT.RemoveAt(0)
+                    NODE.RIGHT = New List(Of TREE_NODE)
+                End If
             End If
+            If NODE.LEFT.Count >= 1 And NODE.RIGHT.Count = 1 Then ' This is the 1 scenario the top if statement doesn't take into account.
+                Dim BEFORE_COUNT As Integer = NODE.LEFT.Count
+                '  Console.WriteLine("DETECTED THE SHIT" & IN_ORDER(NODE, True))
+                If NODE.RIGHT(0).VALUE = "+" Then ' These two checks mean I have a (a+b+c+...) form for my right node, ie A*(x+y+z)
+                    ' Console.WriteLine("DETECTED THE SHIT")
+                    Dim NEW_NODE As New TREE_NODE
+                    NEW_NODE.VALUE = "*"
+                    If NODE.LEFT.Count = 2 Then
+                        NEW_NODE.LEFT.Add(NODE.LEFT(0))
+                        NEW_NODE.RIGHT.Add(NODE.LEFT(1))
+                    ElseIf NODE.LEFT.Count > 2 Then
+                        NEW_NODE.LEFT = NODE.LEFT.GetRange(0, NODE.LEFT.Count - 1) ' Splits the newnode so it is displayed properly.
+                        NEW_NODE.RIGHT = NODE.LEFT.GetRange(NODE.LEFT.Count - 1, 1)
+                    Else
+                        NEW_NODE.LEFT.Add(NODE.LEFT(0))
+                        Dim ONE_NODE As New TREE_NODE
+                        ONE_NODE.VALUE = "1"
+                        NEW_NODE.RIGHT.Add(ONE_NODE)
+                    End If
 
 
+
+                    MULTIPLIER_SIMPLIFIER_CALCULATOR(MODE, NODE, NEW_NODE.CLONE(), NODE.RIGHT)
+                    NODE.VALUE = "+"
+                    NODE.LEFT.RemoveRange(0, BEFORE_COUNT)
+                    NODE.RIGHT = New List(Of TREE_NODE)
+                End If
+            End If
         End If
 
 
@@ -170,6 +493,10 @@ Class OPTIMISER : Inherits UTILITIES
         ' As the function 'SIMPLE_COLLECT_FRACTION_DENOMINATORS' does not level operators when it creates Addition Nodes.
         SIMPLE_COLLECT_FRACTION_DENOMINATORS(NODE)
         LEVEL_OPERATORS(NODE)
+    End Sub
+
+    Private Sub CLEANUP_ADDITION(NODE As TREE_NODE)
+
     End Sub
 
     Private Function SIMPLE_COLLECT_FRACTION_DENOMINATORS(NODE As TREE_NODE)
@@ -264,26 +591,23 @@ Class OPTIMISER : Inherits UTILITIES
         Dim ADDED = False
         ' I consider this an 'Up to Down' Method.
 
+
         If NODE.VALUE = "+" Then ' Like terms can be collected.
             For Each ELEMENT As List(Of TREE_NODE) In ITERATION_ARRAY
                 For A As Integer = 0 To ELEMENT.Count() - 1
                     If (A) <= (ELEMENT.Count - 1) Then
-                        Console.WriteLine("LOOPING")
                         Dim ELEMENT_A As TREE_NODE = ELEMENT(A) ' The element I will compare against all the others within the NODE_LIST.
                         If ELEMENT_A.VALUE <> "+" Then
                             Dim ELEMENT_TOTAL, ELEMENT_B As TREE_NODE
                             ' Console.WriteLine(IN_ORDER(ELEMENT_A, True) & " juh ")
-                            Console.WriteLine("NODE VALUE" & ELEMENT_A.VALUE)
                             For Each ELEMENT_B_TEMP As TREE_NODE In NODE_LIST ' I will now compare it to every node I HAVE looked at. (This is better than, say, comparing it to everything from the getgo.)
                                 Dim TERMS_A, TERMS_B As SEPERATED_TERMS
                                 TERMS_A = RETURN_VARIABLE_AND_COEFFICIENT(ELEMENT_A.CLONE())
                                 TERMS_B = RETURN_VARIABLE_AND_COEFFICIENT(ELEMENT_B_TEMP.CLONE())
                                 '  Console.WriteLine(IN_ORDER(ELEMENT_A, True) & " WHAT " & IN_ORDER(ELEMENT_B_TEMP, True))
-                                Console.WriteLine(TERMS_A.COEFFICIENT & " SByte " & IN_ORDER(TERMS_A.VARIABLE, True) & "COFF" & IN_ORDER(TERMS_B.VARIABLE, True) & " SByte " & TERMS_B.COEFFICIENT)
                                 If IN_ORDER(TERMS_A.VARIABLE, True) = IN_ORDER(TERMS_B.VARIABLE, True) Then
                                     Dim NEW_NODE As New TREE_NODE
                                     NEW_NODE.VALUE = TERMS_A.COEFFICIENT + TERMS_B.COEFFICIENT ' This will be the new coefficient
-                                    Console.WriteLine("NEW COFF" & NEW_NODE.VALUE)
                                     ' Console.WriteLine("FINALISED THING" & IN_ORDER(TERMS_B.VARIABLE, True) & "NODE ROOT" & TERMS_B.VARIABLE.LEFT(0).VALUE)
                                     If TERMS_B.VARIABLE.VALUE = "*" Then
                                         TERMS_B.VARIABLE.LEFT.Insert(0, NEW_NODE) ' I will add the coefficient to the front of the node's variable. 
@@ -292,22 +616,24 @@ Class OPTIMISER : Inherits UTILITIES
                                     End If
                                     ELEMENT_TOTAL = TERMS_B.VARIABLE ' This will be the new node.
                                     ELEMENT_B = ELEMENT_B_TEMP ' This is here so I can remove it.
-                                    Exit For
                                 End If
                             Next
 
                             If Not ELEMENT_B Is Nothing Then ' As it is an 'each' loop, I will need to modify it outside of it. 
-                                Console.WriteLine(IN_ORDER(ELEMENT_A, True) & " the fukc" & IN_ORDER(ELEMENT_B, True))
                                 NODE_LIST.Remove(ELEMENT_B)
                                 If ELEMENT.Contains(ELEMENT_B) Then
                                     ELEMENT.Remove(ELEMENT_B)
+                                Else
+                                    ITERATION_ARRAY(1).Remove(ELEMENT_B) ' "It just works." TM
+                                    ITERATION_ARRAY(0).Remove(ELEMENT_B) ' If the list becomes massive then this will become a problem. It won't become massive.
                                 End If
-                                ITERATION_ARRAY(1).Remove(ELEMENT_B) ' "It just works." TM
-                                ITERATION_ARRAY(0).Remove(ELEMENT_B) ' If the list becomes massive then this will become a problem. It won't become massive.
                                 ELEMENT.Remove(ELEMENT_A)
-                                ELEMENT.Add(ELEMENT_TOTAL)
+                                If NODE.LEFT.Count > NODE.RIGHT.Count Then
+                                    NODE.RIGHT.Add(ELEMENT_TOTAL)
+                                Else
+                                    NODE.LEFT.Add(ELEMENT_TOTAL)
+                                End If
                             Else ' This means no like term could be found. Thus I will just add ELEMENT_A to the NODE_LIST to be compared to the rest.
-                                Console.WriteLine("ADFDING TO NODE LIST BAHAHA" & ELEMENT_A.VALUE & " actual THING" & IN_ORDER(ELEMENT_A, True))
                                 NODE_LIST.Add(ELEMENT_A)
                             End If
                             ELEMENT_B = Nothing
@@ -340,58 +666,59 @@ Class OPTIMISER : Inherits UTILITIES
         ' This will go through a node and remove the coefficient. It returns an array of the cleaned node and the coefficient.
         ' Do not use this on a + node, as that is not okay and hurts me in many ways.
         ' UPDATE -I can not be bothered to stop it from doing that, but it doesn't seem to do much except waste resources. Probably fine, but I won't test it to make sure. That would give me a reason to fix it.
-        Dim COEFFICIENT As Integer = 0
+        Dim COEFFICIENT As Integer = 1
         Dim RETURN_STRUCTURE As New SEPERATED_TERMS
 
         'Console.WriteLine("THIS IS WHAT WILL BE SOPRTED " & IN_ORDER(NODE, True))
-
-        If Not NODE.LEFT Is Nothing Then
-            For A As Integer = 0 To NODE.LEFT.Count() - 1
-                If A <= (NODE.LEFT.Count - 1) And NODE.VALUE <> "^" Then ' Makes sure it exists.
-                    Dim NODE_ELEMENT_S As SEPERATED_TERMS = RETURN_VARIABLE_AND_COEFFICIENT(NODE.LEFT(A))
-                    Dim NODE_ELEMENT As TREE_NODE = NODE_ELEMENT_S.VARIABLE
-                    COEFFICIENT += NODE_ELEMENT_S.COEFFICIENT
-                    If IsNumeric(NODE_ELEMENT.VALUE) Then
-                        NODE.LEFT.RemoveAt(A) ' Removes the coefficient
-                        COEFFICIENT = COEFFICIENT + NODE_ELEMENT.VALUE
-                        ' Console.WriteLine("addd 1" & COEFFICIENT)
-                    End If
-                    If NODE_ELEMENT.RIGHT.Count = 1 And NODE_ELEMENT.LEFT.Count = 1 Then
-                        If NODE_ELEMENT.VALUE = "*" And NODE_ELEMENT.LEFT(0).VALUE = "-1" Then ' This is a negative number
+        If Not NODE.VALUE = "+" Then
+            If Not NODE.LEFT Is Nothing Then
+                For A As Integer = 0 To NODE.LEFT.Count() - 1
+                    If A <= (NODE.LEFT.Count - 1) And NODE.VALUE <> "^" Then ' Makes sure it exists.
+                        Dim NODE_ELEMENT_S As SEPERATED_TERMS = RETURN_VARIABLE_AND_COEFFICIENT(NODE.LEFT(A))
+                        Dim NODE_ELEMENT As TREE_NODE = NODE_ELEMENT_S.VARIABLE
+                        COEFFICIENT *= NODE_ELEMENT_S.COEFFICIENT
+                        If IsNumeric(NODE_ELEMENT.VALUE) Then
                             NODE.LEFT.RemoveAt(A) ' Removes the coefficient
-                            COEFFICIENT = COEFFICIENT - NODE_ELEMENT.RIGHT(0).VALUE
-                            'Console.WriteLine("addd 2" & COEFFICIENT)
+                            COEFFICIENT *= NODE_ELEMENT.VALUE
+                            ' Console.WriteLine("addd 1" & COEFFICIENT)
+                        End If
+                        If NODE_ELEMENT.RIGHT.Count = 1 And NODE_ELEMENT.LEFT.Count = 1 Then
+                            If NODE_ELEMENT.VALUE = "*" And NODE_ELEMENT.LEFT(0).VALUE = "-1" Then ' This is a negative number
+                                NODE.LEFT.RemoveAt(A) ' Removes the coefficient
+                                COEFFICIENT *= -NODE_ELEMENT.RIGHT(0).VALUE
+                                'Console.WriteLine("addd 2" & COEFFICIENT)
+                            End If
                         End If
                     End If
-                End If
-            Next
-        End If
+                Next
+            End If
 
-        If Not NODE.RIGHT Is Nothing Then
-            For A As Integer = 0 To NODE.RIGHT.Count() - 1
-                If NODE.RIGHT.Count = 1 And IsNumeric(NODE.RIGHT(0).VALUE) Then ' This takes into account that a number will be in the form (a*b, where a is the coefficient and b "1"
-                    Exit For
-                End If
-                If A <= (NODE.RIGHT.Count - 1) And NODE.VALUE <> "^" Then  ' Makes sure it exists.
-                    Dim NODE_ELEMENT_S As SEPERATED_TERMS = RETURN_VARIABLE_AND_COEFFICIENT(NODE.RIGHT(A))
-                    Dim NODE_ELEMENT As TREE_NODE = NODE_ELEMENT_S.VARIABLE
-                    COEFFICIENT += NODE_ELEMENT_S.COEFFICIENT
-                    If IsNumeric(NODE_ELEMENT.VALUE) Then
-                        NODE.RIGHT.RemoveAt(A) ' Removes the coefficient
-                        COEFFICIENT = COEFFICIENT + NODE_ELEMENT.VALUE
+            If Not NODE.RIGHT Is Nothing Then
+                For A As Integer = 0 To NODE.RIGHT.Count() - 1
+                    If NODE.RIGHT.Count = 1 And IsNumeric(NODE.RIGHT(0).VALUE) Then ' This takes into account that a number will be in the form (a*b, where a is the coefficient and b "1"
+                        If NODE.RIGHT(0).VALUE = 1 Then
+                            Exit For
+                        End If
                     End If
-                    If NODE_ELEMENT.RIGHT.Count = 1 And NODE_ELEMENT.LEFT.Count = 1 Then
-                        If NODE_ELEMENT.VALUE = "*" And NODE_ELEMENT.LEFT(0).VALUE = "-1" Then ' This is a negative number
+                    If A <= (NODE.RIGHT.Count - 1) And NODE.VALUE <> "^" Then  ' Makes sure it exists.
+                        Dim NODE_ELEMENT_S As SEPERATED_TERMS = RETURN_VARIABLE_AND_COEFFICIENT(NODE.RIGHT(A))
+                        Dim NODE_ELEMENT As TREE_NODE = NODE_ELEMENT_S.VARIABLE
+                        COEFFICIENT *= NODE_ELEMENT_S.COEFFICIENT
+                        If IsNumeric(NODE_ELEMENT.VALUE) Then
                             NODE.RIGHT.RemoveAt(A) ' Removes the coefficient
-                            COEFFICIENT = COEFFICIENT - NODE_ELEMENT.RIGHT(0).VALUE
+                            COEFFICIENT *= NODE_ELEMENT.VALUE
+                        End If
+                        If NODE_ELEMENT.RIGHT.Count = 1 And NODE_ELEMENT.LEFT.Count = 1 Then
+                            If NODE_ELEMENT.VALUE = "*" And NODE_ELEMENT.LEFT(0).VALUE = "-1" Then ' This is a negative number
+                                NODE.RIGHT.RemoveAt(A) ' Removes the coefficient
+                                COEFFICIENT *= -NODE_ELEMENT.RIGHT(0).VALUE
+                            End If
                         End If
                     End If
-                End If
-            Next
+                Next
+            End If
         End If
-
         'Console.WriteLine("RETURNED COF " & COEFFICIENT)
-        Console.WriteLine("addd" & COEFFICIENT)
         RETURN_STRUCTURE.COEFFICIENT = COEFFICIENT
         RETURN_STRUCTURE.VARIABLE = NODE
         Return RETURN_STRUCTURE
@@ -536,8 +863,52 @@ Class OPTIMISER : Inherits UTILITIES
         End If
     End Sub
 
+
+
     Private Sub PREPARATION_BY_UNIVERSAL_RULING(NODE As TREE_NODE)
-        '!!This assumes it is a Binary Tree!!
+        PREPARATION_BY_TIMES_RULING(NODE)
+        LEVEL_OPERATORS(NODE)
+        PREPERATION_POWER_RULING(NODE)
+    End Sub
+
+    Private Sub PREPERATION_POWER_RULING(NODE As TREE_NODE)
+
+        ' Does not assume binary tree.
+
+
+        Dim ITERATION_ARRAY = {NODE.LEFT, NODE.RIGHT}
+
+        If Not NODE.LEFT Is Nothing Then
+            For Each NODE_ELEMENT As TREE_NODE In NODE.LEFT
+                PREPERATION_POWER_RULING(NODE_ELEMENT)
+            Next
+        End If
+        If Not NODE.RIGHT Is Nothing Then
+            For Each NODE_ELEMENT As TREE_NODE In NODE.RIGHT
+                PREPERATION_POWER_RULING(NODE_ELEMENT)
+            Next
+        End If
+        If NODE.VALUE = "*" Then
+            For Each ELEMENT As List(Of TREE_NODE) In ITERATION_ARRAY
+                ' This means it may have variables in it. 
+                ' I can modify it such that I loop through each of the variables, and if they have no left and right children, I can modify it to a power node.
+                ' This works as I assume I will traverse each node, so I will be looking at all the children. (He says with mocking self-assurance.)
+                For A As Integer = 0 To ELEMENT.Count - 1
+                    If ELEMENT(A).VALUE <> "+" And ELEMENT(A).VALUE <> "-" And ELEMENT(A).VALUE <> "/" And ELEMENT(A).VALUE <> "*" And ELEMENT(A).VALUE <> "^" And Not IsNumeric(ELEMENT(A).VALUE) Then ' Its just a check that means its a variable. There are other ways. 
+
+                        Dim NEW_NODE, ONE_NODE As New TREE_NODE
+                        NEW_NODE.VALUE = "^"
+                        ONE_NODE.VALUE = "1"
+                        NEW_NODE.LEFT.Add(ELEMENT(A))
+                        NEW_NODE.RIGHT.Add(ONE_NODE)
+                        ELEMENT.RemoveAt(A)
+                        ELEMENT.Add(NEW_NODE)
+                    End If
+                Next
+            Next
+        End If
+    End Sub
+    Private Sub PREPARATION_BY_TIMES_RULING(NODE As TREE_NODE)
 
         ' To easily accomodate for variables and coefficients, I'll change all the numericals to a*1. 
         ' This is so that functions like 'COLLECT_LIKE_TERMS' can function with numbers. It assumes everything is in the form a*b, where a is the coefficient, and b the variable.
@@ -553,46 +924,30 @@ Class OPTIMISER : Inherits UTILITIES
 
         If Not NODE.LEFT Is Nothing Then
             For Each NODE_ELEMENT As TREE_NODE In NODE.LEFT
-                PREPARATION_BY_UNIVERSAL_RULING(NODE_ELEMENT)
+                PREPARATION_BY_TIMES_RULING(NODE_ELEMENT)
             Next
         End If
         If Not NODE.RIGHT Is Nothing Then
             For Each NODE_ELEMENT As TREE_NODE In NODE.RIGHT
-                PREPARATION_BY_UNIVERSAL_RULING(NODE_ELEMENT)
+                PREPARATION_BY_TIMES_RULING(NODE_ELEMENT)
             Next
         End If
-
-        For Each ELEMENT As List(Of TREE_NODE) In ITERATION_ARRAY
-            If ELEMENT.Count > 0 Then
-                If IsNumeric(ELEMENT(0).VALUE) Then ' Every single node is checked, so I won't need to loop through. 
-                    Console.WriteLine("numeric" & ELEMENT(0).VALUE)
-                    Dim NEW_NODE, ONE_NODE As New TREE_NODE
-                    NEW_NODE.VALUE = "*"
-                    ONE_NODE.VALUE = "1"
-                    NEW_NODE.RIGHT.Add(ONE_NODE) ' Adds the 1 multiplication
-                    NEW_NODE.LEFT.Add(ELEMENT(0)) ' Adds the exisiting node.
-                    ELEMENT.RemoveAt(0)
-                    Console.WriteLine("NEW NODE" & IN_ORDER(NEW_NODE, True))
-                    ELEMENT.Add(NEW_NODE)
-                End If
-                If NODE.VALUE = "*" Then
-                    ' This means it may have variables in it. 
-                    ' I can modify it such that I loop through each of the variables, and if they have no left and right children, I can modify it to a power node.
-                    ' This works as I assume I will traverse each node, so I will be looking at all the children. (He says with mocking self-assurance.)
-                    For A As Integer = 0 To ELEMENT.Count - 1
-                        If ELEMENT(A).VALUE <> "+" And ELEMENT(A).VALUE <> "-" And ELEMENT(A).VALUE <> "/" And ELEMENT(A).VALUE <> "*" And ELEMENT(A).VALUE <> "^" And Not IsNumeric(ELEMENT(A).VALUE) Then ' Its just a check that means its a variable. There are other ways. 
-                            Dim NEW_NODE, ONE_NODE As New TREE_NODE
-                            NEW_NODE.VALUE = "^"
-                            ONE_NODE.VALUE = "1"
-                            NEW_NODE.LEFT.Add(ELEMENT(0))
-                            NEW_NODE.RIGHT.Add(ONE_NODE)
-                            ELEMENT.RemoveAt(0)
-                            ELEMENT.Add(NEW_NODE)
-                        End If
-                    Next
-                End If
-            End If
-        Next
+        If NODE.VALUE = "+" Then
+            For Each ELEMENT As List(Of TREE_NODE) In ITERATION_ARRAY
+                For A As Integer = 0 To ELEMENT.Count - 1
+                    Dim CHECK As Dictionary(Of String, String) = MATCH_COLLECTION_TO_DICTIONARY(Regex.Matches(ELEMENT(A).VALUE, "[*,+,/,-]")) 'Looks for operators.
+                    If (IsNumeric(ELEMENT(A).VALUE) Or CHECK.Count = 0) Then ' Every single node is checked, so I won't need to loop through. 
+                        Dim NEW_NODE, ONE_NODE As New TREE_NODE
+                        NEW_NODE.VALUE = "*"
+                        ONE_NODE.VALUE = "1"
+                        NEW_NODE.RIGHT.Add(ONE_NODE) ' Adds the 1 multiplication
+                        NEW_NODE.LEFT.Add(ELEMENT(A).CLONE) ' Adds the exisiting node.
+                        ELEMENT.RemoveAt(A)
+                        ELEMENT.Add(NEW_NODE)
+                    End If
+                Next
+            Next
+        End If
     End Sub
     Private Function LEVEL_OPERATORS(NODE As TREE_NODE)
 
@@ -611,28 +966,34 @@ Class OPTIMISER : Inherits UTILITIES
 
         If Not NODE.LEFT Is Nothing Then
             For A As Integer = 0 To NODE.LEFT.Count() - 1
-                Dim NODE_ELEMENT As TREE_NODE = NODE.LEFT(A)
-                Dim TYPE_RETURN As String = LEVEL_OPERATORS(NODE_ELEMENT) ' This is vital. It returns a +, * or nothing. #
-                'If its a + or a * that means that the child can be simplified, if this root node has the same root.
-                ' We have to do this as this is a recursive execution from bottom to up. 
-                ' It will only return this value when it can no longer traverse down, so that means I can edit from bottom to top. (duh that is how it works)
-                If TYPE_RETURN <> Nothing And TYPE_RETURN = NODE.VALUE Then
-                    Dim TO_MOVE_ELEMENT_TOTAL As List(Of TREE_NODE) = NODE_ELEMENT.LEFT
-                    Dim TO_MOVE_ELEMENT_SUB As List(Of TREE_NODE) = NODE_ELEMENT.RIGHT
-                    TO_MOVE_ELEMENT_TOTAL.AddRange(TO_MOVE_ELEMENT_SUB)
-                    NODE.LEFT = TO_MOVE_ELEMENT_TOTAL
+                If A < NODE.LEFT.Count() Then
+                    Dim NODE_ELEMENT As TREE_NODE = NODE.LEFT(A)
+                    Dim TYPE_RETURN As String = LEVEL_OPERATORS(NODE_ELEMENT) ' This is vital. It returns a +, * or nothing. #
+                    'If its a + or a * that means that the child can be simplified, if this root node has the same root.
+                    ' We have to do this as this is a recursive execution from bottom to up. 
+                    ' It will only return this value when it can no longer traverse down, so that means I can edit from bottom to top. (duh that is how it works)
+                    If TYPE_RETURN <> Nothing And TYPE_RETURN = NODE.VALUE Then
+                        Dim TO_MOVE_ELEMENT_TOTAL As New List(Of TREE_NODE)
+                        TO_MOVE_ELEMENT_TOTAL.AddRange(NODE_ELEMENT.RIGHT)
+                        TO_MOVE_ELEMENT_TOTAL.AddRange(NODE_ELEMENT.LEFT)
+                        NODE.LEFT.RemoveAt(A)
+                        NODE.LEFT.AddRange(TO_MOVE_ELEMENT_TOTAL)
+                    End If
                 End If
             Next
         End If
         If Not NODE.RIGHT Is Nothing Then
-            For A As Integer = 0 To NODE.RIGHT.Count() - 1
-                Dim NODE_ELEMENT As TREE_NODE = NODE.RIGHT(A)
-                Dim TYPE_RETURN As String = LEVEL_OPERATORS(NODE_ELEMENT) ' This is vital. It returns a +, * or nothing. #
-                If TYPE_RETURN <> Nothing And TYPE_RETURN = NODE.VALUE Then
-                    Dim TO_MOVE_ELEMENT_TOTAL As List(Of TREE_NODE) = NODE_ELEMENT.LEFT
-                    Dim TO_MOVE_ELEMENT_SUB As List(Of TREE_NODE) = NODE_ELEMENT.RIGHT
-                    TO_MOVE_ELEMENT_TOTAL.AddRange(TO_MOVE_ELEMENT_SUB) ' Joins the two lists. Remember that each left and right are of the childs left and right. The whole parent is the right.
-                    NODE.RIGHT = TO_MOVE_ELEMENT_TOTAL
+            For a As Integer = 0 To NODE.RIGHT.Count() - 1
+                If a < NODE.RIGHT.Count() Then
+                    Dim NODE_ELEMENT As TREE_NODE = NODE.RIGHT(a)
+                    Dim TYPE_RETURN As String = LEVEL_OPERATORS(NODE_ELEMENT) ' this is vital. it returns a +, * or nothing. #
+                    If TYPE_RETURN <> Nothing And TYPE_RETURN = NODE.VALUE Then
+                        Dim TO_MOVE_ELEMENT_TOTAL As New List(Of TREE_NODE)
+                        TO_MOVE_ELEMENT_TOTAL.AddRange(NODE_ELEMENT.RIGHT)
+                        TO_MOVE_ELEMENT_TOTAL.AddRange(NODE_ELEMENT.LEFT)
+                        NODE.RIGHT.RemoveAt(a)
+                        NODE.RIGHT.AddRange(TO_MOVE_ELEMENT_TOTAL)
+                    End If
                 End If
             Next
         End If
@@ -650,9 +1011,11 @@ End Class
 Module MODULE1
 
     Sub MAIN()
-        Dim SIMPLIFIED As New SIMPLE_SIMPLIFY("(9x+10y+9p+10u)*(81+10z)")
-        Console.WriteLine("SUM" & SIMPLIFIED.RESULT)
-        Console.Read()
-        Console.ReadKey()
+        While True
+            Console.Write("DO THE INPUT:")
+            Dim INPUT As String = Console.ReadLine()
+            Dim SIMPLIFIED As New SIMPLE_SIMPLIFY(INPUT)
+            Console.WriteLine("THE ASNWER" & SIMPLIFIED.RESULT)
+        End While
     End Sub
 End Module

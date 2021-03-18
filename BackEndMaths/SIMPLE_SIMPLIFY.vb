@@ -14,7 +14,8 @@ Class SIMPLE_SIMPLIFY : Inherits EXPRESSION_TREE
         MyBase.New(INPUT)
         CREATE_TREE() ' Creates a tree from the input specified.
         Dim OPTIMISER As New OPTIMISER
-        OPTIMISER.OPTIMISE_TREE(TREE_ROOT)
+        Dim RESULT_NODE As TREE_NODE = OPTIMISER.OPTIMISE_TREE(TREE_ROOT)
+        RESULT = IN_ORDER(RESULT_NODE, True)
     End Sub
 
 

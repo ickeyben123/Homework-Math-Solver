@@ -56,7 +56,8 @@ Class POSTFIX_EXPRESSION : Inherits UTILITIES ' defines any expression that is w
                                 TEMP_QUEUE.Enqueue(CHAR_TO_COMBINE)
                             End If
                         Else
-                            TEMP_QUEUE.Enqueue(CHAR_TO_COMBINE)
+                            TEMP_STRING_LIST.Add("*")
+                            TEMP_STRING_LIST.Add(CHAR_TO_COMBINE & "1")
                         End If
                     Else
                         TEMP_STRING_LIST.Add(CHAR_TO_COMBINE)

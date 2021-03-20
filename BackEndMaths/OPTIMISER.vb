@@ -67,7 +67,6 @@ Class OPTIMISER : Inherits UTILITIES
         Return TREE_TO_MODIFY
     End Function
 
-
     ' Simplification Functions
     ' //These are made to actually modify the expression.
     '//// THIS TO BE FINISHED!! ////  TAKE INTO ACCOUNT NEAGTIVE NUMBERS!
@@ -120,6 +119,12 @@ Class OPTIMISER : Inherits UTILITIES
     End Sub
 
     'Private Sub 
+
+    Private Sub COLLECT_LIKE_TERMS_WRAPPER(NODE As TREE_NODE)
+        LEVEL_OPERATORS(NODE)
+        PREPARATION_BY_TIMES_RULING(TREE_TO_MODIFY)
+        COLLECT_LIKE_TERMS(NODE)
+    End Sub
 
 
     Private Sub MULTIPLIER_WRAPPER_SOLVER(NODE As TREE_NODE)
@@ -336,7 +341,6 @@ Class OPTIMISER : Inherits UTILITIES
 
         End If
     End Sub
-
     Private Sub MULTIPLIER_SOLVER(NODE As TREE_NODE)
         ' Let A*B = C, when A and B are integers.
 
@@ -362,28 +366,67 @@ Class OPTIMISER : Inherits UTILITIES
                 FINAL_INT *= INTEGERS(0).VALUE
                 TOTAL_LIST.Remove(INTEGERS(0))
             Next
-
             Dim NEW_INT As New TREE_NODE
             NEW_INT.VALUE = FINAL_INT
-            TOTAL_LIST.Add(NEW_INT)
+            TOTAL_LIST.Insert(0, NEW_INT)
             NODE.LEFT = New List(Of TREE_NODE)
             NODE.RIGHT = New List(Of TREE_NODE)
 
             If TOTAL_LIST.Count = 1 And IsNumeric(TOTAL_LIST(0).VALUE) Then
                 NODE.VALUE = TOTAL_LIST(0).VALUE
-            ElseIf TOTAL_LIST.Count = 2 Then
-                NODE.LEFT.Add(TOTAL_LIST(0))
-                NODE.RIGHT.Add(TOTAL_LIST(1))
-            ElseIf TOTAL_LIST.Count = 3 Then
+            ElseIf TOTAL_LIST.Count >= 1 Then
                 NODE.LEFT = TOTAL_LIST.GetRange(0, TOTAL_LIST.Count - 1) ' Splits the newnode so it is displayed properly.
                 NODE.RIGHT = TOTAL_LIST.GetRange(TOTAL_LIST.Count - 1, 1)
-            ElseIf TOTAL_LIST.Count > 3 Then
-                NODE.LEFT = TOTAL_LIST.GetRange(0, TOTAL_LIST.Count - 2) ' Splits the newnode so it is displayed properly.
-                NODE.RIGHT = TOTAL_LIST.GetRange(TOTAL_LIST.Count - 1, 1)
             End If
-
         End If
     End Sub
+    'Private Sub MULTIPLIER_SOLVER(NODE As TREE_NODE)
+    '    ' Let A*B = C, when A and B are integers.
+
+    '    If Not NODE.LEFT Is Nothing Then
+    '        For Each NODE_ELEMENT As TREE_NODE In NODE.LEFT
+    '            MULTIPLIER_SOLVER(NODE_ELEMENT)
+    '        Next
+    '    End If
+    '    If Not NODE.RIGHT Is Nothing Then
+    '        For Each NODE_ELEMENT As TREE_NODE In NODE.RIGHT
+    '            MULTIPLIER_SOLVER(NODE_ELEMENT)
+    '        Next
+    '    End If
+    '    If NODE.VALUE = "*" Then
+    '        Dim TOTAL_LIST As New List(Of TREE_NODE)
+    '        TOTAL_LIST.AddRange(NODE.RIGHT)
+    '        TOTAL_LIST.AddRange(NODE.LEFT)
+    '        Dim INTEGERS = From INT In TOTAL_LIST Where IsNumeric(INT.VALUE)
+    '        Dim FINAL_INT As Integer = 1
+    '        For Each item In TOTAL_LIST
+    '        Next
+    '        For A = 0 To INTEGERS.Count - 1
+    '            FINAL_INT *= INTEGERS(0).VALUE
+    '            TOTAL_LIST.Remove(INTEGERS(0))
+    '        Next
+
+    '        Dim NEW_INT As New TREE_NODE
+    '        NEW_INT.VALUE = FINAL_INT
+    '        NODE.LEFT = New List(Of TREE_NODE)
+    '        NODE.RIGHT = New List(Of TREE_NODE)
+    '        If TOTAL_LIST.Count = 0 And IsNumeric(NEW_INT.VALUE) Then
+    '            NODE.VALUE = NEW_INT.VALUE
+    '        ElseIf TOTAL_LIST.Count = 1 Then
+    '            NODE.RIGHT.Add(TOTAL_LIST(0))
+    '        ElseIf TOTAL_LIST.Count = 2 Then
+    '            NODE.LEFT.Add(TOTAL_LIST(0))
+    '            NODE.RIGHT.Add(TOTAL_LIST(1))
+    '        ElseIf TOTAL_LIST.Count = 3 Then
+    '            NODE.LEFT.AddRange(TOTAL_LIST.GetRange(0, TOTAL_LIST.Count - 1))
+    '            NODE.RIGHT.AddRange(TOTAL_LIST.GetRange(TOTAL_LIST.Count - 1, 1))
+    '        ElseIf TOTAL_LIST.Count > 3 Then
+    '            NODE.LEFT = TOTAL_LIST.GetRange(0, TOTAL_LIST.Count - 1) ' Splits the newnode so it is displayed properly.
+    '            NODE.RIGHT = TOTAL_LIST.GetRange(TOTAL_LIST.Count - 2, 1)
+    '        End If
+    '        NODE.LEFT.Insert(0, (NEW_INT))
+    '    End If
+    'End Sub
 
 
     ' End of the 'Give Up' Subroutines

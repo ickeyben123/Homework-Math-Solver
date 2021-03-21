@@ -7,7 +7,7 @@ Class UTILITIES
     Public Function IN_ORDER(NODE As TREE_NODE, FIRST As Boolean) ' Returns an inorder string.
         Dim OUTPUT As String = "" ' String to be created.
         Dim Count As Integer = 0
-        If FIRST = False And NODE.LEFT.Count > 0 And NODE.RIGHT.Count > 0 Then
+        If FIRST = False And NODE.LEFT.Count > 0 And NODE.RIGHT.Count > 0 And NODE.VALUE <> "*" Then
             OUTPUT = OUTPUT & "("
         End If
         If Not NODE.LEFT Is Nothing Then
@@ -30,7 +30,7 @@ Class UTILITIES
                 OUTPUT = OUTPUT & IN_ORDER(NODE_ELEMENT, False)
             Next
         End If
-        If FIRST = False And NODE.LEFT.Count > 0 And NODE.RIGHT.Count > 0 Then
+        If FIRST = False And NODE.LEFT.Count > 0 And NODE.RIGHT.Count > 0 And NODE.VALUE <> "*" Then
             OUTPUT = OUTPUT & ")"
         End If
         Return OUTPUT

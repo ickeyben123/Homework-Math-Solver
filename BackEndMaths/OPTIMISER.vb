@@ -9,7 +9,7 @@ End Enum
 Class OPTIMISER : Inherits UTILITIES
 
     ' General class for optimising trees. 
-    Public TREE_TO_MODIFY As TREE_NODE
+    Private TREE_TO_MODIFY As TREE_NODE
     '' FIX LIKE TERM SUMMING AS IT BREAKS THE POWER ADDITION
     Public Function OPTIMISE_TREE(TO_MODIFY As TREE_NODE)
         ' This function is important in simplifying the tree expressions. The disadvantage of trees are such that certain multiplicative expressions can be interpreted in multiple ways. 
@@ -23,6 +23,8 @@ Class OPTIMISER : Inherits UTILITIES
         Dim GLOBAL_LAST_TREE As String
 
         TREE_TO_MODIFY = TO_MODIFY
+
+
         For i = 1 To 10
             GLOBAL_LAST_TREE = IN_ORDER(TREE_TO_MODIFY, True)
             PREPARATION_BY_TIMES_RULING(TREE_TO_MODIFY)
@@ -34,12 +36,12 @@ Class OPTIMISER : Inherits UTILITIES
                 LEVEL_OPERATORS(TREE_TO_MODIFY) ' levels the operators, see function for more details.
                 RATIONAL_SIMPLIFICATION(TREE_TO_MODIFY)
             End While
-            ' FRACTION_COLLECTER_WRAPPER(TREE_TO_MODIFY)
+            FRACTION_COLLECTER_WRAPPER(TREE_TO_MODIFY)
             LAST_TREE = ""
             While Not LAST_TREE = IN_ORDER(TREE_TO_MODIFY, True)
                 LAST_TREE = IN_ORDER(TREE_TO_MODIFY, True)
                 PREPARATION_BY_TIMES_RULING(TREE_TO_MODIFY)
-                'COLLECT_LIKE_TERMS(TREE_TO_MODIFY)
+                COLLECT_LIKE_TERMS(TREE_TO_MODIFY)
 
             End While
             'Console.WriteLine("finished boi v2")
@@ -56,22 +58,34 @@ Class OPTIMISER : Inherits UTILITIES
             'Console.WriteLine("finished boi v3")
             'Console.WriteLine(IN_ORDER(TREE_TO_MODIFY, True))
         Next
+        ' Console.WriteLine("finished boi v3")
+        ' Console.WriteLine(IN_ORDER(TREE_TO_MODIFY, True))
+        Return IN_ORDER(TREE_TO_MODIFY, True)
+    End Function
+
+    Public Function DIFFERENTIATE(Optional TO_MODIFY As TREE_NODE = Nothing)
+        If TO_MODIFY IsNot Nothing Then
+            TREE_TO_MODIFY = TO_MODIFY
+        End If
+
+        ' This is only here as when there is no + node at the top, things get iffy for some algorithms designed around them.
+        ' I could fix it but my attempts just make things annoying.
+        If TREE_TO_MODIFY.VALUE <> "+" Then
+            Dim ADD_NODE, ZERO_NODE As New TREE_NODE
+            ADD_NODE.VALUE = "+"
+            ZERO_NODE.VALUE = "0"
+            ADD_NODE.LEFT.Add(TREE_TO_MODIFY)
+            ADD_NODE.RIGHT.Add(ZERO_NODE)
+            TREE_TO_MODIFY = ADD_NODE
+        End If
         PREPERATION_POWER_RULING(TREE_TO_MODIFY)
+        PREPARATION_BY_TIMES_RULING(TREE_TO_MODIFY)
+
+        Console.WriteLine("to be" & IN_ORDER(TREE_TO_MODIFY,true))
         DIFFERENTATION_WRAPPER(TREE_TO_MODIFY)
-        CLEANUP_FINALISER(TREE_TO_MODIFY)
-        LEVEL_OPERATORS(TREE_TO_MODIFY)
-        COLLECT_LIKE_TERMS(TREE_TO_MODIFY)
-        REMOVE_LOOSE_ADDITIONS(TREE_TO_MODIFY)
-        REMOVE_POWERS(TREE_TO_MODIFY)
-        Console.WriteLine("finished boi v3")
-        Console.WriteLine(IN_ORDER(TREE_TO_MODIFY, True))
-        ' Differentiation attempt.
-
-
-
-
-
-        Return TREE_TO_MODIFY
+        ' Simplify the differentiated
+        OPTIMISE_TREE(TREE_TO_MODIFY)
+        Return IN_ORDER(TREE_TO_MODIFY, True)
     End Function
 
 
@@ -209,7 +223,9 @@ Class OPTIMISER : Inherits UTILITIES
             Return PLUS_NODE
 
         Else
-            Return Nothing
+            Dim ZERO_NODE As New TREE_NODE
+            ZERO_NODE.VALUE = "0"
+            Return ZERO_NODE
 
         End If
 
@@ -242,10 +258,19 @@ Class OPTIMISER : Inherits UTILITIES
                     Console.WriteLine("THIS THINGGG" & IN_ORDER(ELEMENT(A), True))
                     Dim DIFFERENTIABLE = LIMITED_DIFFERENTIATE(SELECTED_NODE)
                     ELEMENT.RemoveAt(A)
-                    ELEMENT.Insert(A, DIFFERENTIABLE)
-                    Exit For
+                    If DIFFERENTIABLE IsNot Nothing Then
+                        ELEMENT.Insert(A, DIFFERENTIABLE)
+                    End If
                 Next
             Next
+        Else
+            Dim DIFFERENTIABLE As TREE_NODE = LIMITED_DIFFERENTIATE(NODE)
+            Console.WriteLine("lol" & IN_ORDER(DIFFERENTIABLE, True) & NODE.VALUE)
+            NODE.LEFT.RemoveRange(0, NODE.LEFT.Count)
+            NODE.RIGHT.RemoveRange(0, NODE.RIGHT.Count)
+            NODE.VALUE = DIFFERENTIABLE.VALUE
+            NODE.LEFT.AddRange(DIFFERENTIABLE.LEFT)
+            NODE.RIGHT.AddRange(DIFFERENTIABLE.RIGHT)
         End If
 
     End Sub
@@ -1234,6 +1259,12 @@ Module MODULE1
             Dim INPUT As String = Console.ReadLine()
             Dim SIMPLIFIED As New SIMPLE_SIMPLIFY(INPUT)
             Console.WriteLine("THE ASNWER" & SIMPLIFIED.RESULT)
+            Console.WriteLine("DIFFERENTIATE? (y/n)")
+            Dim YES As String = Console.ReadLine
+            If YES.ToLower = "y" Then
+                SIMPLIFIED.DIFFERENTIATE()
+                Console.WriteLine("THE ASNWER" & SIMPLIFIED.RESULT)
+            End If
         End While
     End Sub
 End Module

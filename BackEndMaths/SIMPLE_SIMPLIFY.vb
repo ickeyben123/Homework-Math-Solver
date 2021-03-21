@@ -9,18 +9,16 @@ Imports System.Text.RegularExpressions
 Class SIMPLE_SIMPLIFY : Inherits EXPRESSION_TREE
 
     Public RESULT As String
+    Public OPTIMISER_CLASS As New OPTIMISER
 
     Sub New(INPUT As String)
         MyBase.New(INPUT)
         CREATE_TREE() ' Creates a tree from the input specified.
-        Dim OPTIMISER As New OPTIMISER
-        Dim RESULT_NODE As TREE_NODE = OPTIMISER.OPTIMISE_TREE(TREE_ROOT)
-        RESULT = IN_ORDER(RESULT_NODE, True)
+        RESULT = OPTIMISER_CLASS.OPTIMISE_TREE(TREE_ROOT)
     End Sub
 
-
-    Public Sub SIMPLIFY() 'Intermediary for the recursive solver.
-        ' RESULT = RECURSIVE_SOLVER(TREE_ROOT)
+    Public Sub DIFFERENTIATE() 'Intermediary for the recursive solver.
+        RESULT = OPTIMISER_CLASS.DIFFERENTIATE()
     End Sub
 
     Private Function ZERO_TO_NEGATIVE(NUMBER As Integer)

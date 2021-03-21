@@ -23,49 +23,57 @@ Class OPTIMISER : Inherits UTILITIES
         Dim GLOBAL_LAST_TREE As String
 
         TREE_TO_MODIFY = TO_MODIFY
-        For I = 1 To 10
-            ' While Not GLOBAL_LAST_TREE = IN_ORDER(TREE_TO_MODIFY, True)
+        For i = 1 To 10
             GLOBAL_LAST_TREE = IN_ORDER(TREE_TO_MODIFY, True)
-            'Console.WriteLine("THE DHDHDHDHDHD" & GLOBAL_LAST_TREE)
             PREPARATION_BY_TIMES_RULING(TREE_TO_MODIFY)
             TREE_TO_MODIFY = TO_MODIFY
-            REMOVE_NEGATIVITY(TREE_TO_MODIFY)
-            MULTIPLIER_SIMPLIFIER(TREE_TO_MODIFY)
             While Not LAST_TREE = IN_ORDER(TREE_TO_MODIFY, True)
                 LAST_TREE = IN_ORDER(TREE_TO_MODIFY, True)
                 REMOVE_NEGATIVITY(TREE_TO_MODIFY) ' removes the negative roots.
                 TREE_TO_MODIFY = TO_MODIFY
                 LEVEL_OPERATORS(TREE_TO_MODIFY) ' levels the operators, see function for more details.
-                PREPERATION_POWER_RULING(TREE_TO_MODIFY)
                 RATIONAL_SIMPLIFICATION(TREE_TO_MODIFY)
             End While
-            FRACTION_COLLECTER_WRAPPER(TREE_TO_MODIFY)
+            ' FRACTION_COLLECTER_WRAPPER(TREE_TO_MODIFY)
             LAST_TREE = ""
             While Not LAST_TREE = IN_ORDER(TREE_TO_MODIFY, True)
                 LAST_TREE = IN_ORDER(TREE_TO_MODIFY, True)
                 PREPARATION_BY_TIMES_RULING(TREE_TO_MODIFY)
-                COLLECT_LIKE_TERMS(TREE_TO_MODIFY)
+                'COLLECT_LIKE_TERMS(TREE_TO_MODIFY)
+
             End While
             'Console.WriteLine("finished boi v2")
             'Console.WriteLine(IN_ORDER(TREE_TO_MODIFY, True))
+            PREPERATION_POWER_RULING(TREE_TO_MODIFY)
             POWER_SOLVER(TREE_TO_MODIFY)
+            MULTIPLIER_SIMPLIFIER(TREE_TO_MODIFY)
             'Console.WriteLine("finished boi v2")
             'Console.WriteLine(IN_ORDER(TREE_TO_MODIFY, True))
             MULTIPLIER_WRAPPER_SOLVER(TREE_TO_MODIFY)
             CLEANUP_FINALISER(TREE_TO_MODIFY)
             REMOVE_LOOSE_ADDITIONS(TREE_TO_MODIFY)
-            REMOVE_ONE_POWERS(TREE_TO_MODIFY)
+            REMOVE_POWERS(TREE_TO_MODIFY)
             'Console.WriteLine("finished boi v3")
             'Console.WriteLine(IN_ORDER(TREE_TO_MODIFY, True))
         Next
+        PREPERATION_POWER_RULING(TREE_TO_MODIFY)
+        DIFFERENTATION_WRAPPER(TREE_TO_MODIFY)
+        CLEANUP_FINALISER(TREE_TO_MODIFY)
+        LEVEL_OPERATORS(TREE_TO_MODIFY)
+        COLLECT_LIKE_TERMS(TREE_TO_MODIFY)
+        REMOVE_LOOSE_ADDITIONS(TREE_TO_MODIFY)
+        REMOVE_POWERS(TREE_TO_MODIFY)
+        Console.WriteLine("finished boi v3")
+        Console.WriteLine(IN_ORDER(TREE_TO_MODIFY, True))
+        ' Differentiation attempt.
 
-        '  End While
-        ' Those optimisations can be considered 'trivial' based on the fact that they merely reorganise the expression. 
-        ' I now need to collect like terms, simplify trivial terms like x^0 = 1, and distribute (a+b)(c+d).
-        ' These are supposedly more complicated.
+
+
+
 
         Return TREE_TO_MODIFY
     End Function
+
 
     ' Simplification Functions
     ' //These are made to actually modify the expression.
@@ -78,6 +86,169 @@ Class OPTIMISER : Inherits UTILITIES
         SUM
         OTHER
     End Enum
+
+    Private Function LIMITED_DIFFERENTIATE(NODE As TREE_NODE)
+        ' This is a recursive algorithm that differentiates specific input functions.
+        ' Differentiation is inherently recursive, or more so it is a downward loop of refining what the derivative actually equals.
+        ' Whatever input function I have, I can change it so that it is in proper form.
+        ' If it is d(f(x)*f(y)), then the resultant after partial derivatives is d(f(x))*f(y) + f(x)*d(f(y))... or (d(f(x))/dx) *dx + f(x) * d(f(y))/dx * dy
+        ' This can only work when I let all functions into some form u, and the basic principles of differentiating powers, or multipliers, follows.
+
+        ' Ie, f(x) and f(y) become f(u) and f(t), where u and t are made to put it in the form (u^a)*(t^b). 
+
+        ' General cases to look for.
+        ' When form u^a is found, do the total derivative of a modified function - 
+        ' EXAMPLE: f(x) = (9x^2+3)^4, let u = 9x^2+3, so f(u)= u^4, taking total derivative of apparent input -> d(f(u)) = d(f(u))/du * du.
+        ' Recursively call the algorithm for "du", so that du is now evaluated, and made to be du/dx, because u is in terms of x and can be further decomposed.
+
+        ' When form (u^a)*(t^b) is found, do product rule derived from partial derivatives,
+        ' EXAMPLE: f(x) = ((9x^2+3)^4)*((39x^5+2x)^93), let u = 9x^2+3 and t = 39x^5+2x.  New form f(u,t) = (u^4)*(t^93). So 'multivariable' function.
+        ' d(f(u,t)) = sum of partial derivatives = ∂(f(u,t))/∂u *du + ∂(f(u,t))/∂t *dt= d(u^4)*(t^93) + (u^4)*d(t^93), -> For d(u^4), the same principle for recursive differentiation applies,
+        ' ie d(u^4) -> d(u^4)/du * du. Call function again for u and differentiate.
+
+
+        ' This will be an up to down traversal, as this is how differentiating works.
+        ' The traversal will only continue when the derivative can be further deconstructed. In the form of u!
+
+        If NODE.VALUE = "*" Then
+            ' I will make a general rule for products, even if they are merely 9x^2.
+            ' So, it will become a sum of partial derivatives.
+            ' If the product has 4 varriables, then there will be 4 sums.
+            ' This will be correct as all product derivatives are in this form, but most of the time the partial derivatives end up turning to nothing.
+            ' General form, say y= f(u,t,c,...) -> d(f(u,t,c,...)) = ∂y/∂u *du + ∂y/∂t * dt + ∂y/∂c * dc ... for infinity. Wonderful elegance in a derivative :).
+
+
+            Dim COLLECTIVE = {NODE.LEFT, NODE.RIGHT}
+            Dim PLUS_NODE As New TREE_NODE
+            PLUS_NODE.VALUE = "+"
+
+
+            For Each ELEMENT In COLLECTIVE
+                For A = 0 To ELEMENT.Count - 1
+
+                    Dim SELECTED_NODE As TREE_NODE = ELEMENT(A)
+                    ' Console.WriteLine("the element" & IN_ORDER(ELEMENT(A), True))
+                    Dim REFERENCE_NODE As New TREE_NODE
+                    REFERENCE_NODE.VALUE = "*"
+                    REFERENCE_NODE.LEFT.AddRange(NODE.LEFT)
+                    REFERENCE_NODE.RIGHT.AddRange(NODE.RIGHT)
+
+                    If REFERENCE_NODE.LEFT.Contains(ELEMENT(A)) Then
+                        REFERENCE_NODE.LEFT.RemoveAt(A)
+                    Else
+                        REFERENCE_NODE.RIGHT.RemoveAt(A)
+                    End If
+
+                    ' This is for the partial part. Ie d(x*y*z) = d(x)*y*z etc. So I must remove the selected node, and then add the reference on later. 
+
+                    If SELECTED_NODE.VALUE = "^" Then
+                        Console.WriteLine("LOL" & IN_ORDER(SELECTED_NODE, True))
+                        ' Remember that I assume powers are numeric. I'll deal with logs when I feel succinctly mad.
+                        Dim MULTIPLIER As New TREE_NODE
+                        MULTIPLIER.VALUE = "*" ' The decomposed derivative
+                        Dim NUMERIC_NODE As New TREE_NODE ' the power
+                        NUMERIC_NODE.VALUE = SELECTED_NODE.RIGHT(0).VALUE
+
+                        Dim CLONED_SELECTED_NODE As TREE_NODE = SELECTED_NODE.CLONE
+                        CLONED_SELECTED_NODE.RIGHT(0).VALUE = CLONED_SELECTED_NODE.RIGHT(0).VALUE - 1 'd(u^3) = 3*u^2 du
+
+                        MULTIPLIER.LEFT.Add(NUMERIC_NODE) ' The power, ie the 3 in the 3*u^2 du
+                        MULTIPLIER.RIGHT.Add(CLONED_SELECTED_NODE) ' The remaining function, ie the u^2
+
+                        MULTIPLIER.RIGHT.AddRange(REFERENCE_NODE.LEFT)
+                        MULTIPLIER.RIGHT.AddRange(REFERENCE_NODE.RIGHT)
+                        Console.WriteLine("LOL " & IN_ORDER(SELECTED_NODE.LEFT(0), True))
+                        Dim NEW_TIMES_NODE, ONE_NODE As New TREE_NODE ' As this algorithm only accepts (x*b), then I will make this *1. Either that or a load of redundancy.
+                        ONE_NODE.VALUE = "1"
+                        NEW_TIMES_NODE.VALUE = "*"
+                        NEW_TIMES_NODE.LEFT.Add(SELECTED_NODE.LEFT(0))
+                        NEW_TIMES_NODE.RIGHT.Add(ONE_NODE)
+
+                        If LIMITED_DIFFERENTIATE(NEW_TIMES_NODE) IsNot Nothing Then
+                            If (LIMITED_DIFFERENTIATE(NEW_TIMES_NODE).LEFT.COUNT + LIMITED_DIFFERENTIATE(NEW_TIMES_NODE).RIGHT.COUNT) > 0 Then
+                                Console.WriteLine("brrerrr" & IN_ORDER(LIMITED_DIFFERENTIATE(NEW_TIMES_NODE), True))
+                                MULTIPLIER.RIGHT.Add(LIMITED_DIFFERENTIATE(NEW_TIMES_NODE)) ' the du. or more so du/dx if u is in x.
+                            End If
+                        End If
+                        If PLUS_NODE.LEFT.Count = 0 Then
+                            PLUS_NODE.LEFT.Add(MULTIPLIER) ' Add the subsequent derivative to the plus node
+                        Else
+                            PLUS_NODE.RIGHT.Add(MULTIPLIER) ' Add the subsequent derivative to the plus node
+                        End If
+
+
+                    ElseIf SELECTED_NODE.VALUE = "+" Then
+
+                        ' Easier to implement.
+                        ' Console.WriteLine("im hereeee" & IN_ORDER(SELECTED_NODE, True))
+                        Dim SUB_COLLECTIVE = {SELECTED_NODE.LEFT, SELECTED_NODE.RIGHT}
+                        Dim NEW_PLUS_NODE As New TREE_NODE
+                        NEW_PLUS_NODE.VALUE = "+"
+                        For Each SUB_ELEMENT In SUB_COLLECTIVE
+                            For B = 0 To SUB_ELEMENT.Count - 1
+                                ' Console.WriteLine("LINE THE PLUSSS" & IN_ORDER(SUB_ELEMENT(B), True))
+                                Dim DIFFERENTIATED_NODE As TREE_NODE = LIMITED_DIFFERENTIATE(SUB_ELEMENT(B))
+                                If NEW_PLUS_NODE.LEFT.Count = 0 Then
+                                    NEW_PLUS_NODE.LEFT.Add(DIFFERENTIATED_NODE) ' Ie (x+y+z) = (dx+dy+dz)
+                                Else
+                                    NEW_PLUS_NODE.RIGHT.Add(DIFFERENTIATED_NODE)
+                                End If
+                            Next
+                        Next
+                        ' I now have a differentiated + node. But in context this must be properly formed.
+                        Dim NEW_NODE As New TREE_NODE
+                        NEW_NODE.VALUE = "*"
+                        NEW_NODE.LEFT.Add(NEW_PLUS_NODE)
+                        NEW_NODE.RIGHT.AddRange(REFERENCE_NODE.LEFT)
+                        NEW_NODE.RIGHT.AddRange(REFERENCE_NODE.RIGHT)
+                        PLUS_NODE = NEW_NODE
+                    End If
+                Next
+            Next
+
+            Return PLUS_NODE
+
+        Else
+            Return Nothing
+
+        End If
+
+    End Function
+
+    Private Sub DIFFERENTATION_WRAPPER(NODE As TREE_NODE)
+
+        ' Where u^(A), and u is a variable of some kind (differentiable, ie if u = (2x^2+3) then implement chain rule) and A is a numeric power.
+        ' Numeric powers are a prerequisite due to logarithms being required for any other form.
+        ' This will be implemented elsewhere and added on in another prototype. 
+
+        ' The form is of a "^", and the left node either being a * or a + node, and the right node being a number.
+        ' d(u^a) -> a*u^(a-1)*du (normally derivatives are in the form d(f(x))/dx, but it is fine to revoke the ratio definer in this case for generalisation. In a more formal definition, df(u)=(d(f(u))/du) * du (typically u = some x, so you write du = (du/dx)*dx))
+        ' This form is constant, so I will differentiate the +, or * node in any fashion.
+
+        ' Where this must not work:
+        ' Differentiation of this form MUST only occur on the foremost + node. 
+        ' This will not be recursive. Ie, I will not look for nodes to differentiate beyond the root node.
+        ' Ie, I can only differentiate "u+a", where u and a are of a common variable x (multivariable form is not an aim right now). I cannot differentiate "u^(u+a)", where I differentiate the bracket of the power, as this is wrong..
+
+
+        If NODE.VALUE = "+" Then
+
+            Dim COLLECTIVE = {NODE.LEFT, NODE.RIGHT}
+
+            For Each ELEMENT In COLLECTIVE
+                For A = 0 To ELEMENT.Count - 1
+
+                    Dim SELECTED_NODE As TREE_NODE = ELEMENT(A)
+                    Console.WriteLine("THIS THINGGG" & IN_ORDER(ELEMENT(A), True))
+                    Dim DIFFERENTIABLE = LIMITED_DIFFERENTIATE(SELECTED_NODE)
+                    ELEMENT.RemoveAt(A)
+                    ELEMENT.Insert(A, DIFFERENTIABLE)
+                    Exit For
+                Next
+            Next
+        End If
+
+    End Sub
 
 
     Private Sub MULTIPLIER_SIMPLIFIER_CALCULATOR(TYPE As MULTIPLIER_NUM, ROOT_NODE As TREE_NODE, LEFT_MULTIPLIER_NODE As TREE_NODE, RIGHT_NODE As List(Of TREE_NODE))
@@ -137,15 +308,15 @@ Class OPTIMISER : Inherits UTILITIES
     ' Not made for elegance or efficiency TM.
 
 
-    Private Sub REMOVE_ONE_POWERS(NODE As TREE_NODE)
+    Private Sub REMOVE_POWERS(NODE As TREE_NODE)
         If Not NODE.LEFT Is Nothing Then
             For Each NODE_ELEMENT As TREE_NODE In NODE.LEFT
-                REMOVE_ONE_POWERS(NODE_ELEMENT)
+                REMOVE_POWERS(NODE_ELEMENT)
             Next
         End If
         If Not NODE.RIGHT Is Nothing Then
             For Each NODE_ELEMENT As TREE_NODE In NODE.RIGHT
-                REMOVE_ONE_POWERS(NODE_ELEMENT)
+                REMOVE_POWERS(NODE_ELEMENT)
             Next
         End If
 
@@ -161,6 +332,10 @@ Class OPTIMISER : Inherits UTILITIES
                     NODE.RIGHT.RemoveRange(0, NODE.RIGHT.Count)
                     ALTERNATING_TREE_INSERTING(TOTAL_NODE, NODE)
                 End If
+            ElseIf NODE.RIGHT(0).VALUE = "0" Then
+                NODE.VALUE = "1"
+                NODE.LEFT.RemoveRange(0, NODE.LEFT.Count)
+                NODE.RIGHT.RemoveRange(0, NODE.RIGHT.Count)
             End If
         End If
 

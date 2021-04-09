@@ -20,6 +20,9 @@ Class SIMPLE_SIMPLIFY : Inherits EXPRESSION_TREE
     Public Sub DIFFERENTIATE() 'Intermediary for the recursive solver.
         RESULT = OPTIMISER_CLASS.DIFFERENTIATE()
     End Sub
+    Public Sub EXPAND() 'Intermediary for the recursive solver.
+        RESULT = OPTIMISER_CLASS.EXPAND_BRACKETS()
+    End Sub
 
     Private Function ZERO_TO_NEGATIVE(NUMBER As Integer)
         If NUMBER = 0 Then

@@ -14,18 +14,36 @@ Class UTILITIES
             For Each NODE_ELEMENT As TREE_NODE In NODE.LEFT ' This loops through each node, resulting in the same for binary trees, but will also allows non binary trees in cases where its needed.
                 Count += 1
                 If Count > 1 Then
+                    If NODE.VALUE = "+" Then
+                        OUTPUT = OUTPUT & " "
+                    End If
                     OUTPUT = OUTPUT & NODE.VALUE
+                    If NODE.VALUE = "+" Then
+                        OUTPUT = OUTPUT & " "
+                    End If
                 End If
                 OUTPUT = OUTPUT & IN_ORDER(NODE_ELEMENT, False)
             Next
         End If
+        If NODE.VALUE = "+" Then
+            OUTPUT = OUTPUT & " "
+        End If
         OUTPUT = OUTPUT & NODE.VALUE
+        If NODE.VALUE = "+" Then
+            OUTPUT = OUTPUT & " "
+        End If
         If Not NODE.RIGHT Is Nothing Then
             Count = 0
             For Each NODE_ELEMENT As TREE_NODE In NODE.RIGHT
                 Count += 1
                 If Count > 1 Then
+                    If NODE.VALUE = "+" Then
+                        OUTPUT = OUTPUT & " "
+                    End If
                     OUTPUT = OUTPUT & NODE.VALUE
+                    If NODE.VALUE = "+" Then
+                        OUTPUT = OUTPUT & " "
+                    End If
                 End If
                 OUTPUT = OUTPUT & IN_ORDER(NODE_ELEMENT, False)
             Next

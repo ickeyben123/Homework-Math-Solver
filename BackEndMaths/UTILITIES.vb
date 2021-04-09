@@ -25,28 +25,31 @@ Class UTILITIES
                 OUTPUT = OUTPUT & IN_ORDER(NODE_ELEMENT, False)
             Next
         End If
-        If NODE.VALUE = "+" Then
-            OUTPUT = OUTPUT & " "
-        End If
-        OUTPUT = OUTPUT & NODE.VALUE
-        If NODE.VALUE = "+" Then
-            OUTPUT = OUTPUT & " "
-        End If
-        If Not NODE.RIGHT Is Nothing Then
-            Count = 0
-            For Each NODE_ELEMENT As TREE_NODE In NODE.RIGHT
-                Count += 1
-                If Count > 1 Then
-                    If NODE.VALUE = "+" Then
-                        OUTPUT = OUTPUT & " "
+        Dim CHECK As Dictionary(Of String, String) = MATCH_COLLECTION_TO_DICTIONARY(Regex.Matches(NODE.VALUE, "[*,+,/,-,^]"))
+        If NODE.RIGHT.Count > 0 Or CHECK.Count = 0 Then ' Removes instances of 9*x*, where there is nothing on the right node.
+            If NODE.VALUE = "+" Then
+                OUTPUT = OUTPUT & " "
+            End If
+            OUTPUT = OUTPUT & NODE.VALUE
+            If NODE.VALUE = "+" Then
+                OUTPUT = OUTPUT & " "
+            End If
+            If Not NODE.RIGHT Is Nothing Then
+                Count = 0
+                For Each NODE_ELEMENT As TREE_NODE In NODE.RIGHT
+                    Count += 1
+                    If Count > 1 Then
+                        If NODE.VALUE = "+" Then
+                            OUTPUT = OUTPUT & " "
+                        End If
+                        OUTPUT = OUTPUT & NODE.VALUE
+                        If NODE.VALUE = "+" Then
+                            OUTPUT = OUTPUT & " "
+                        End If
                     End If
-                    OUTPUT = OUTPUT & NODE.VALUE
-                    If NODE.VALUE = "+" Then
-                        OUTPUT = OUTPUT & " "
-                    End If
-                End If
-                OUTPUT = OUTPUT & IN_ORDER(NODE_ELEMENT, False)
-            Next
+                    OUTPUT = OUTPUT & IN_ORDER(NODE_ELEMENT, False)
+                Next
+            End If
         End If
         If FIRST = False And NODE.LEFT.Count > 0 And NODE.RIGHT.Count > 0 And NODE.VALUE <> "*" Then
             OUTPUT = OUTPUT & ")"

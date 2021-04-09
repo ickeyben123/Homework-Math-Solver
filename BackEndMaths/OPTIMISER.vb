@@ -49,7 +49,7 @@ Class OPTIMISER : Inherits UTILITIES
             MULTIPLIER_WRAPPER_SOLVER(TREE_TO_MODIFY)
             PREPERATION_POWER_RULING(TREE_TO_MODIFY)
             POWER_SOLVER(TREE_TO_MODIFY)
-            'MULTIPLIER_SIMPLIFIER(TREE_TO_MODIFY)
+            ' MULTIPLIER_SIMPLIFIER(TREE_TO_MODIFY)
             'Console.WriteLine("finished boi v2")
             'Console.WriteLine(IN_ORDER(TREE_TO_MODIFY, True))
             CLEANUP_FINALISER(TREE_TO_MODIFY)
@@ -552,8 +552,6 @@ Class OPTIMISER : Inherits UTILITIES
                 Next
             Next
             ' "^" nodes are binary, so we can only have 0 indexes for left and right.
-            For Each element In NODE_LIST
-            Next
             Dim GROUPED = NODE_LIST.GroupBy(Function(x) IN_ORDER(x.LEFT(0), True)) ' Off did the computer go, for this program was trying to turn it into a toaster. (It groups each by the same variables, ie {{x},{x^3,x^2,x^1}})
             For Each GROUP In GROUPED ' We gonna loop through it all baby
                 Dim MAIN_VARIABLE As TREE_NODE = GROUP.ElementAt(0).LEFT(0)
@@ -561,12 +559,13 @@ Class OPTIMISER : Inherits UTILITIES
                 MAIN_POWER.VALUE = "+" ' This is weird but I will just solve for this + node like I do for an input :)
 
                 Dim ALTERNATING_EVEN_NUMBER As Integer = 1
-
-                For Each Item As TREE_NODE In GROUP
-                    If ALTERNATING_EVEN_NUMBER Mod 2 = 1 Then
-                        MAIN_POWER.LEFT.Add(Item.RIGHT(0))
+                Dim CHECK As New Dictionary(Of String, String)
+                For Each ITEM As TREE_NODE In GROUP
+                    CHECK = MATCH_COLLECTION_TO_DICTIONARY(Regex.Matches(ITEM.VALUE, "[*,+,/,-,^]"))
+                    If CHECK.Count = 0 Then
+                        MAIN_POWER.LEFT.Add(ITEM.RIGHT(0))
                     Else
-                        MAIN_POWER.RIGHT.Add(Item.RIGHT(0))
+                        MAIN_POWER.RIGHT.Add(ITEM.RIGHT(0))
                     End If
                     ALTERNATING_EVEN_NUMBER += 1
                 Next
@@ -578,7 +577,8 @@ Class OPTIMISER : Inherits UTILITIES
                 FINAL_NODE.VALUE = "^"
                 FINAL_NODE.LEFT.Insert(0, MAIN_VARIABLE)
                 FINAL_NODE.RIGHT.Insert(0, MAIN_POWER)
-                If NODE.LEFT.Count = 0 Then
+                CHECK = MATCH_COLLECTION_TO_DICTIONARY(Regex.Matches(MAIN_VARIABLE.VALUE, "[*,+,/,-,^]"))
+                If CHECK.Count = 0 Then
                     NODE.LEFT.Add(FINAL_NODE)
                 Else
                     NODE.RIGHT.Add(FINAL_NODE)
@@ -626,8 +626,14 @@ Class OPTIMISER : Inherits UTILITIES
             If TOTAL_LIST.Count = 1 And ((IsNumeric(TOTAL_LIST(0).VALUE) Or CHECK.Count = 0)) Then
                 NODE.VALUE = TOTAL_LIST(0).VALUE
             ElseIf TOTAL_LIST.Count >= 1 Then
-                NODE.LEFT = TOTAL_LIST.GetRange(0, TOTAL_LIST.Count - 1) ' Splits the newnode so it is displayed properly.
-                NODE.RIGHT = TOTAL_LIST.GetRange(TOTAL_LIST.Count - 1, 1)
+                For Each ITEM_IN_LIST As TREE_NODE In TOTAL_LIST
+                    CHECK = MATCH_COLLECTION_TO_DICTIONARY(Regex.Matches(ITEM_IN_LIST.VALUE, "[*,+,/,-,^]"))
+                    If CHECK.Count = 0 Then ' Its a number or variable.
+                        NODE.LEFT.Add(ITEM_IN_LIST)
+                    Else
+                        NODE.RIGHT.Add(ITEM_IN_LIST)
+                    End If
+                Next
             End If
         End If
     End Sub

@@ -1467,6 +1467,8 @@ Module MODULE1
             Console.WriteLine(SIMPLIFIED.RESULT)
             Console.WriteLine("")
             Console.WriteLine("DIFFERENTIATE? (y/n)")
+            Console.WriteLine("If it is multivariable, please substitute the common variable, as all variables are assumed to be x.")
+            Console.WriteLine("An update may remove this and substitute proper notation.")
             Dim YES As String = Console.ReadLine
             If YES.ToLower = "y" Then
                 SIMPLIFIED.DIFFERENTIATE()

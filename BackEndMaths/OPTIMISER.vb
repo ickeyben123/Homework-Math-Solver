@@ -45,13 +45,12 @@ Class OPTIMISER : Inherits UTILITIES
                 COLLECT_LIKE_TERMS(TREE_TO_MODIFY)
             End While
             'Console.WriteLine("finished boi v2")
-            'Console.WriteLine(IN_ORDER(TREE_TO_MODIFY, True))
-            MULTIPLIER_WRAPPER_SOLVER(TREE_TO_MODIFY)
-            PREPERATION_POWER_RULING(TREE_TO_MODIFY)
-            POWER_SOLVER(TREE_TO_MODIFY)
             If EXPAND_BRACKETS Then
                 MULTIPLIER_SIMPLIFIER(TREE_TO_MODIFY)
             End If
+            MULTIPLIER_WRAPPER_SOLVER(TREE_TO_MODIFY)
+            PREPERATION_POWER_RULING(TREE_TO_MODIFY)
+            POWER_SOLVER(TREE_TO_MODIFY)
             'Console.WriteLine("finished boi v2")
             'Console.WriteLine(IN_ORDER(TREE_TO_MODIFY, True))
             REMOVE_LOOSE_ADDITIONS(TREE_TO_MODIFY)
@@ -68,9 +67,41 @@ Class OPTIMISER : Inherits UTILITIES
     End Function
 
     Public Function EXPAND_BRACKETS()
+        BRACKET_POWER_EXPANDER(TREE_TO_MODIFY)
         OPTIMISE_TREE(TREE_TO_MODIFY, True)
         Return IN_ORDER(TREE_TO_MODIFY, True)
     End Function
+
+    Public Sub BRACKET_POWER_EXPANDER(NODE As TREE_NODE)
+        'u^3=u*u*u
+
+        If Not NODE.LEFT Is Nothing Then
+            For Each NODE_ELEMENT As TREE_NODE In NODE.LEFT
+                BRACKET_POWER_EXPANDER(NODE_ELEMENT)
+            Next
+        End If
+        If Not NODE.RIGHT Is Nothing Then
+            For Each NODE_ELEMENT As TREE_NODE In NODE.RIGHT
+                BRACKET_POWER_EXPANDER(NODE_ELEMENT)
+            Next
+        End If
+
+        If NODE.VALUE = "^" Then
+            If IsNumeric(NODE.RIGHT(0).VALUE) Then
+                NODE.VALUE = "*"
+                For I As Integer = 1 To NODE.RIGHT(0).VALUE - 1
+                    If NODE.RIGHT.Count = 1 Then
+                        NODE.RIGHT.Add(NODE.LEFT(0).CLONE)
+                    Else
+                        NODE.LEFT.Add(NODE.LEFT(0).CLONE)
+                    End If
+                Next
+                NODE.RIGHT.RemoveAt(0)
+            End If
+        End If
+
+
+    End Sub
 
     Public Sub REMOVE_DIVISION_ENTIRELY(NODE As TREE_NODE)
         ' THIS ASSUMES NUMERIC POWERS!!
@@ -209,6 +240,7 @@ Class OPTIMISER : Inherits UTILITIES
                             Dim CLONED_SELECTED_NODE As TREE_NODE = SELECTED_NODE.CLONE
                             CLONED_SELECTED_NODE.RIGHT(0).VALUE = CLONED_SELECTED_NODE.RIGHT(0).VALUE - 1 'd(u^3) = 3*u^2 du
 
+
                             MULTIPLIER.LEFT.Add(NUMERIC_NODE) ' The power, ie the 3 in the 3*u^2 du
                             MULTIPLIER.RIGHT.Add(CLONED_SELECTED_NODE) ' The remaining function, ie the u^2
 
@@ -262,6 +294,18 @@ Class OPTIMISER : Inherits UTILITIES
                         NEW_NODE.RIGHT.AddRange(REFERENCE_NODE.LEFT)
                         NEW_NODE.RIGHT.AddRange(REFERENCE_NODE.RIGHT)
                         PLUS_NODE.LEFT.Add(NEW_NODE)
+                    Else
+                        Dim CHECK = MATCH_COLLECTION_TO_DICTIONARY(Regex.Matches(SELECTED_NODE.VALUE, "(?=[a-z])[^x]"))
+                        If CHECK.Count > 0 Then
+                            Dim TOP, BOTTOM As New TREE_NODE
+                            Dim CLONED_SELECTED_NODE As TREE_NODE = SELECTED_NODE.CLONE
+                            TOP.VALUE = "d" & SELECTED_NODE.VALUE
+                            BOTTOM.VALUE = "dx"
+                            CLONED_SELECTED_NODE.VALUE = "/"
+                            CLONED_SELECTED_NODE.LEFT.Add(TOP)
+                            CLONED_SELECTED_NODE.RIGHT.Add(BOTTOM)
+                            Return CLONED_SELECTED_NODE
+                        End If
                     End If
                 Next
             Next
@@ -494,33 +538,33 @@ Class OPTIMISER : Inherits UTILITIES
         End If
 
 
-        If NODE.VALUE = "+" Then
-            Dim INTERATION_LIST = {NODE.LEFT, NODE.RIGHT}
-            For Each ELEMENT_LIST As List(Of TREE_NODE) In INTERATION_LIST
-                Dim BUFFER As Integer = 0
-                For A = 0 To ELEMENT_LIST.Count - 1
-                    If (A - BUFFER) <= ELEMENT_LIST.Count - 1 Then
-                        Dim TRUE_POINTER As Integer = A - BUFFER
-                        If ELEMENT_LIST(TRUE_POINTER).VALUE = "*" Then ' If its a * node, so something like 0*x
-                            Dim TOTAL_LIST As New List(Of TREE_NODE)
-                            TOTAL_LIST.AddRange(ELEMENT_LIST(TRUE_POINTER).RIGHT)
-                            TOTAL_LIST.AddRange(ELEMENT_LIST(TRUE_POINTER).LEFT)
-                            Dim ZEROS = From INT In TOTAL_LIST Where INT.VALUE = "0" ' Collects all the 0's in the node, if there are any.
-                            If ZEROS.Count > 0 Then
-                                ELEMENT_LIST.RemoveAt(TRUE_POINTER)
-                                If NODE.LEFT.Count + NODE.RIGHT.Count = 0 Then
-                                    NODE.VALUE = ""
-                                End If
-                                BUFFER += 1
-                            End If
-                        ElseIf ELEMENT_LIST(TRUE_POINTER).VALUE = "0" Then ' Just a 0
-                            ELEMENT_LIST.RemoveAt(TRUE_POINTER)
-                            BUFFER += 1
-                        End If
-                    End If
-                Next
-            Next
-        End If
+        'If NODE.VALUE = "+" Then
+        '    Dim INTERATION_LIST = {NODE.LEFT, NODE.RIGHT}
+        '    For Each ELEMENT_LIST As List(Of TREE_NODE) In INTERATION_LIST
+        '        Dim BUFFER As Integer = 0
+        '        For A = 0 To ELEMENT_LIST.Count - 1
+        '            If (A - BUFFER) <= ELEMENT_LIST.Count - 1 Then
+        '                Dim TRUE_POINTER As Integer = A - BUFFER
+        '                If ELEMENT_LIST(TRUE_POINTER).VALUE = "*" Then ' If its a * node, so something like 0*x
+        '                    Dim TOTAL_LIST As New List(Of TREE_NODE)
+        '                    TOTAL_LIST.AddRange(ELEMENT_LIST(TRUE_POINTER).RIGHT)
+        '                    TOTAL_LIST.AddRange(ELEMENT_LIST(TRUE_POINTER).LEFT)
+        '                    Dim ZEROS = From INT In TOTAL_LIST Where INT.VALUE = "0" ' Collects all the 0's in the node, if there are any.
+        '                    If ZEROS.Count > 0 Then
+        '                        ELEMENT_LIST.RemoveAt(TRUE_POINTER)
+        '                        If NODE.LEFT.Count + NODE.RIGHT.Count = 0 Then
+        '                            NODE.VALUE = ""
+        '                        End If
+        '                        BUFFER += 1
+        '                    End If
+        '                ElseIf ELEMENT_LIST(TRUE_POINTER).VALUE = "0" Then ' Just a 0
+        '                    ELEMENT_LIST.RemoveAt(TRUE_POINTER)
+        '                    BUFFER += 1
+        '                End If
+        '            End If
+        '        Next
+        '    Next
+        'End If
 
         If NODE.VALUE = "*" Then
             If NODE.RIGHT.Count = 1 Then
@@ -710,6 +754,9 @@ Class OPTIMISER : Inherits UTILITIES
 
                 Dim BUFFER As Integer = 0
                 For A = 0 To ELEMENT_LIST.Count - 1
+                    If ELEMENT_LIST.Count = 0 Then
+                        Exit For
+                    End If
                     ' As whenever there is a successful operation, the count is reduced by 1, I must add a buffer to properly reflect it.
                     Dim SELECTED_NODE As TREE_NODE = ELEMENT_LIST(A - BUFFER)
 
@@ -937,7 +984,7 @@ Class OPTIMISER : Inherits UTILITIES
                                 Dim TERMS_A, TERMS_B As SEPERATED_TERMS
                                 TERMS_A = RETURN_VARIABLE_AND_COEFFICIENT(ELEMENT_A.CLONE())
                                 TERMS_B = RETURN_VARIABLE_AND_COEFFICIENT(ELEMENT_B_TEMP.CLONE())
-                                Console.WriteLine(IN_ORDER(ELEMENT_A, True) & " WHAT " & IN_ORDER(ELEMENT_B_TEMP, True))
+                                'Console.WriteLine(IN_ORDER(ELEMENT_A, True) & " WHAT " & IN_ORDER(ELEMENT_B_TEMP, True))
 
 
                                 Dim ALL_TERMS_A As New List(Of TREE_NODE)
@@ -1467,13 +1514,16 @@ Module MODULE1
             Console.WriteLine(SIMPLIFIED.RESULT)
             Console.WriteLine("")
             Console.WriteLine("DIFFERENTIATE? (y/n)")
-            Console.WriteLine("If it is multivariable, please substitute the common variable, as all variables are assumed to be x.")
-            Console.WriteLine("An update may remove this and substitute proper notation.")
+            Console.WriteLine("If it is multivariable, note that the evaluation is d(f(x,y,z...))/dx.")
+            Console.WriteLine("Partial Derivatives that evaluate as ∂(f(x))/∂x *dx will become ∂(f(x))/∂x.")
+            Console.WriteLine("Partial Derivatives of any other form will produce a ratio derivative in a product.")
+            Console.WriteLine("- Such as ∂(f(x))/∂x * dy/dx")
+            Console.WriteLine("This form is correct for all multivariable calculations, no matter the number of arguments.")
             Dim YES As String = Console.ReadLine
             If YES.ToLower = "y" Then
                 SIMPLIFIED.DIFFERENTIATE()
                 Console.WriteLine("")
-                Console.WriteLine(SIMPLIFIED.RESULT)
+                Console.WriteLine("d(" & INPUT & ")" & "/dx = " & SIMPLIFIED.RESULT)
                 Console.WriteLine("")
             End If
             Console.WriteLine("Expand the brackets? (y/n)")

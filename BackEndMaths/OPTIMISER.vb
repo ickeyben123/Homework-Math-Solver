@@ -25,7 +25,7 @@ Class OPTIMISER : Inherits UTILITIES
         TREE_TO_MODIFY = TO_MODIFY
 
 
-        For i = 1 To 10
+        For i = 1 To 8
             GLOBAL_LAST_TREE = IN_ORDER(TREE_TO_MODIFY, True)
             PREPARATION_BY_TIMES_RULING(TREE_TO_MODIFY)
             NEGATIVE_POWERS_TO_DIVISORS(TREE_TO_MODIFY)
@@ -343,13 +343,13 @@ Class OPTIMISER : Inherits UTILITIES
             For Each ELEMENT In COLLECTIVE
                 Dim CLONED_LOOP As New List(Of TREE_NODE)
                 CLONED_LOOP.AddRange(ELEMENT)
-                Console.WriteLine("THE COUNTTTT" & CLONED_LOOP.Count)
+                'Console.WriteLine("THE COUNTTTT" & CLONED_LOOP.Count)
                 For A = 0 To ELEMENT.Count - 1
 
                     Dim SELECTED_NODE As TREE_NODE = CLONED_LOOP(A)
-                    Console.WriteLine("THIS THINGGG" & IN_ORDER(CLONED_LOOP(A), True))
+                    'Console.WriteLine("THIS THINGGG" & IN_ORDER(CLONED_LOOP(A), True))
                     Dim DIFFERENTIABLE = LIMITED_DIFFERENTIATE(SELECTED_NODE)
-                    Console.WriteLine("THIS THINGGzzzzG" & IN_ORDER(DIFFERENTIABLE, True))
+                    'Console.WriteLine("THIS THINGGzzzzG" & IN_ORDER(DIFFERENTIABLE, True))
                     ELEMENT.RemoveAt(A)
                     If DIFFERENTIABLE IsNot Nothing Then
                         ELEMENT.Insert(A, DIFFERENTIABLE)
@@ -538,33 +538,33 @@ Class OPTIMISER : Inherits UTILITIES
         End If
 
 
-        'If NODE.VALUE = "+" Then
-        '    Dim INTERATION_LIST = {NODE.LEFT, NODE.RIGHT}
-        '    For Each ELEMENT_LIST As List(Of TREE_NODE) In INTERATION_LIST
-        '        Dim BUFFER As Integer = 0
-        '        For A = 0 To ELEMENT_LIST.Count - 1
-        '            If (A - BUFFER) <= ELEMENT_LIST.Count - 1 Then
-        '                Dim TRUE_POINTER As Integer = A - BUFFER
-        '                If ELEMENT_LIST(TRUE_POINTER).VALUE = "*" Then ' If its a * node, so something like 0*x
-        '                    Dim TOTAL_LIST As New List(Of TREE_NODE)
-        '                    TOTAL_LIST.AddRange(ELEMENT_LIST(TRUE_POINTER).RIGHT)
-        '                    TOTAL_LIST.AddRange(ELEMENT_LIST(TRUE_POINTER).LEFT)
-        '                    Dim ZEROS = From INT In TOTAL_LIST Where INT.VALUE = "0" ' Collects all the 0's in the node, if there are any.
-        '                    If ZEROS.Count > 0 Then
-        '                        ELEMENT_LIST.RemoveAt(TRUE_POINTER)
-        '                        If NODE.LEFT.Count + NODE.RIGHT.Count = 0 Then
-        '                            NODE.VALUE = ""
-        '                        End If
-        '                        BUFFER += 1
-        '                    End If
-        '                ElseIf ELEMENT_LIST(TRUE_POINTER).VALUE = "0" Then ' Just a 0
-        '                    ELEMENT_LIST.RemoveAt(TRUE_POINTER)
-        '                    BUFFER += 1
-        '                End If
-        '            End If
-        '        Next
-        '    Next
-        'End If
+        If NODE.VALUE = "+" Then
+            Dim INTERATION_LIST = {NODE.LEFT, NODE.RIGHT}
+            For Each ELEMENT_LIST As List(Of TREE_NODE) In INTERATION_LIST
+                Dim BUFFER As Integer = 0
+                For A = 0 To ELEMENT_LIST.Count - 1
+                    If (A - BUFFER) <= ELEMENT_LIST.Count - 1 Then
+                        Dim TRUE_POINTER As Integer = A - BUFFER
+                        If ELEMENT_LIST(TRUE_POINTER).VALUE = "*" Then ' If its a * node, so something like 0*x
+                            Dim TOTAL_LIST As New List(Of TREE_NODE)
+                            TOTAL_LIST.AddRange(ELEMENT_LIST(TRUE_POINTER).RIGHT)
+                            TOTAL_LIST.AddRange(ELEMENT_LIST(TRUE_POINTER).LEFT)
+                            Dim ZEROS = From INT In TOTAL_LIST Where INT.VALUE = "0" ' Collects all the 0's in the node, if there are any.
+                            If ZEROS.Count > 0 Then
+                                ELEMENT_LIST.RemoveAt(TRUE_POINTER)
+                                If NODE.LEFT.Count + NODE.RIGHT.Count = 0 Then
+                                    NODE.VALUE = ""
+                                End If
+                                BUFFER += 1
+                            End If
+                        ElseIf ELEMENT_LIST(TRUE_POINTER).VALUE = "0" Then ' Just a 0
+                            ELEMENT_LIST.RemoveAt(TRUE_POINTER)
+                            BUFFER += 1
+                        End If
+                    End If
+                Next
+            Next
+        End If
 
         If NODE.VALUE = "*" Then
             If NODE.RIGHT.Count = 1 Then

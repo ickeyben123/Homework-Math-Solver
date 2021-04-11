@@ -11,7 +11,7 @@ Class OPTIMISER : Inherits UTILITIES
     ' General class for optimising trees. 
     Private TREE_TO_MODIFY As TREE_NODE
     '' FIX LIKE TERM SUMMING AS IT BREAKS THE POWER ADDITION
-    Public Function OPTIMISE_TREE(TO_MODIFY As TREE_NODE)
+    Public Function OPTIMISE_TREE(TO_MODIFY As TREE_NODE, Optional EXPAND_BRACKETS As Boolean = False)
         ' This function is important in simplifying the tree expressions. The disadvantage of trees are such that certain multiplicative expressions can be interpreted in multiple ways. 
         ' Division and Negative nodes are not optimal for a computer to handle. This function/(collection of functions) aims to solve these issues by rearranging nodes into a form that is fundamentally the same.
         ' ... But much easier to interpret for a tree. 
@@ -49,15 +49,16 @@ Class OPTIMISER : Inherits UTILITIES
             MULTIPLIER_WRAPPER_SOLVER(TREE_TO_MODIFY)
             PREPERATION_POWER_RULING(TREE_TO_MODIFY)
             POWER_SOLVER(TREE_TO_MODIFY)
-            ' MULTIPLIER_SIMPLIFIER(TREE_TO_MODIFY)
+            If EXPAND_BRACKETS Then
+                MULTIPLIER_SIMPLIFIER(TREE_TO_MODIFY)
+            End If
             'Console.WriteLine("finished boi v2")
             'Console.WriteLine(IN_ORDER(TREE_TO_MODIFY, True))
-            CLEANUP_FINALISER(TREE_TO_MODIFY)
             REMOVE_LOOSE_ADDITIONS(TREE_TO_MODIFY)
             REMOVE_POWERS(TREE_TO_MODIFY)
+            CLEANUP_FINALISER(TREE_TO_MODIFY)
             'REMOVE_DIVISION_ENTIRELY(TREE_TO_MODIFY)
             '  DIVISION_MULTIPLICATION(TREE_TO_MODIFY)
-
             'Console.WriteLine("finished boi v3")
             'Console.WriteLine(IN_ORDER(TREE_TO_MODIFY, True))
         Next
@@ -67,8 +68,7 @@ Class OPTIMISER : Inherits UTILITIES
     End Function
 
     Public Function EXPAND_BRACKETS()
-        MULTIPLIER_SIMPLIFIER(TREE_TO_MODIFY)
-        OPTIMISE_TREE(TREE_TO_MODIFY)
+        OPTIMISE_TREE(TREE_TO_MODIFY, True)
         Return IN_ORDER(TREE_TO_MODIFY, True)
     End Function
 
@@ -172,7 +172,7 @@ Class OPTIMISER : Inherits UTILITIES
             ' So, it will become a sum of partial derivatives.
             ' If the product has 4 varriables, then there will be 4 sums.
             ' This will be correct as all product derivatives are in this form, but most of the time the partial derivatives end up turning to nothing.
-            ' General form, say y= f(u,t,c,...) -> d(f(u,t,c,...)) = ∂y/∂u *du + ∂y/∂t * dt + ∂y/∂c * dc ... for infinity. Wonderful elegance in a derivative :).
+            ' General form, say y= f(u,t,c,...) -> d(f(u,t,c,...)) = ∂y/∂u *du + ∂y/∂t * dt + ∂y/∂c * dc ... to infinity. Wonderful elegance in a derivative :).
 
 
             Dim COLLECTIVE = {NODE.LEFT, NODE.RIGHT}
@@ -196,7 +196,7 @@ Class OPTIMISER : Inherits UTILITIES
                         REFERENCE_NODE.RIGHT.RemoveAt(A)
                     End If
 
-                    ' This is for the partial part. Ie d(x*y*z) = d(x)*y*z etc. So I must remove the selected node, and then add the reference on later. 
+                    ' This is for the partial part. Ie d(x*y*z) = d(x)*y*z + x*d(y)*z... etc. So I must remove the selected node, and then add the reference on later. 
 
                     If SELECTED_NODE.VALUE = "^" Then
                         If Not IsNumeric(IN_ORDER(SELECTED_NODE.LEFT(0), True)) Then
@@ -222,7 +222,7 @@ Class OPTIMISER : Inherits UTILITIES
 
                             If LIMITED_DIFFERENTIATE(NEW_TIMES_NODE) IsNot Nothing Then
                                 If (LIMITED_DIFFERENTIATE(NEW_TIMES_NODE).LEFT.COUNT + LIMITED_DIFFERENTIATE(NEW_TIMES_NODE).RIGHT.COUNT) > 0 Then
-                                    Console.WriteLine("brrerrr" & IN_ORDER(LIMITED_DIFFERENTIATE(NEW_TIMES_NODE), True))
+                                    'Console.WriteLine("brrerrr" & IN_ORDER(LIMITED_DIFFERENTIATE(NEW_TIMES_NODE), True))
                                     MULTIPLIER.RIGHT.Add(LIMITED_DIFFERENTIATE(NEW_TIMES_NODE)) ' the du. or more so du/dx if u is in x.
                                 End If
                             End If
@@ -289,7 +289,7 @@ Class OPTIMISER : Inherits UTILITIES
         ' Where this must not work:
         ' Differentiation of this form MUST only occur on the foremost + node. 
         ' This will not be recursive. Ie, I will not look for nodes to differentiate beyond the root node.
-        ' Ie, I can only differentiate "u+a", where u and a are of a common variable x (multivariable form is not an aim right now). I cannot differentiate "u^(u+a)", where I differentiate the bracket of the power, as this is wrong..
+        ' Ie, I can only differentiate "u+a", where u and a are of a common variable x (multivariable form is not an aim right now). I cannot differentiate "u+a" in "u^(u+a)", where I differentiate the bracket of the power, as this is wrong..
 
 
         If NODE.VALUE = "+" Then
@@ -457,8 +457,10 @@ Class OPTIMISER : Inherits UTILITIES
                 Dim CHOSEN_NODE As TREE_NODE
                 If NODE.LEFT.Count = 1 Then
                     CHOSEN_NODE = NODE.LEFT(0)
-                Else
+                ElseIf NODE.RIGHT.Count = 1 Then
                     CHOSEN_NODE = NODE.RIGHT(0)
+                Else
+                    Return
                 End If
                 NODE.VALUE = CHOSEN_NODE.VALUE
                 If IsNumeric(CHOSEN_NODE.VALUE) Then
@@ -492,6 +494,33 @@ Class OPTIMISER : Inherits UTILITIES
         End If
 
 
+        If NODE.VALUE = "+" Then
+            Dim INTERATION_LIST = {NODE.LEFT, NODE.RIGHT}
+            For Each ELEMENT_LIST As List(Of TREE_NODE) In INTERATION_LIST
+                Dim BUFFER As Integer = 0
+                For A = 0 To ELEMENT_LIST.Count - 1
+                    If (A - BUFFER) <= ELEMENT_LIST.Count - 1 Then
+                        Dim TRUE_POINTER As Integer = A - BUFFER
+                        If ELEMENT_LIST(TRUE_POINTER).VALUE = "*" Then ' If its a * node, so something like 0*x
+                            Dim TOTAL_LIST As New List(Of TREE_NODE)
+                            TOTAL_LIST.AddRange(ELEMENT_LIST(TRUE_POINTER).RIGHT)
+                            TOTAL_LIST.AddRange(ELEMENT_LIST(TRUE_POINTER).LEFT)
+                            Dim ZEROS = From INT In TOTAL_LIST Where INT.VALUE = "0" ' Collects all the 0's in the node, if there are any.
+                            If ZEROS.Count > 0 Then
+                                ELEMENT_LIST.RemoveAt(TRUE_POINTER)
+                                If NODE.LEFT.Count + NODE.RIGHT.Count = 0 Then
+                                    NODE.VALUE = ""
+                                End If
+                                BUFFER += 1
+                            End If
+                        ElseIf ELEMENT_LIST(TRUE_POINTER).VALUE = "0" Then ' Just a 0
+                            ELEMENT_LIST.RemoveAt(TRUE_POINTER)
+                            BUFFER += 1
+                        End If
+                    End If
+                Next
+            Next
+        End If
 
         If NODE.VALUE = "*" Then
             If NODE.RIGHT.Count = 1 Then
@@ -609,33 +638,31 @@ Class OPTIMISER : Inherits UTILITIES
             TOTAL_LIST.AddRange(NODE.LEFT)
             Dim INTEGERS = From INT In TOTAL_LIST Where IsNumeric(INT.VALUE)
             Dim FINAL_INT As Integer = 1
-            For Each item In TOTAL_LIST
-            Next
             For A = 0 To INTEGERS.Count - 1
                 FINAL_INT *= INTEGERS(0).VALUE
                 TOTAL_LIST.Remove(INTEGERS(0))
             Next
             Dim NEW_INT As New TREE_NODE
-            NEW_INT.VALUE = FINAL_INT
-            If FINAL_INT <> 1 Then
+            If FINAL_INT <> "1" Or TOTAL_LIST.Count = 0 Then
+                NEW_INT.VALUE = FINAL_INT
                 TOTAL_LIST.Insert(0, NEW_INT)
             End If
             NODE.LEFT = New List(Of TREE_NODE)
-            NODE.RIGHT = New List(Of TREE_NODE)
-            Dim CHECK As Dictionary(Of String, String) = MATCH_COLLECTION_TO_DICTIONARY(Regex.Matches(TOTAL_LIST(0).VALUE, "[*,+,/,-,^]"))
-            If TOTAL_LIST.Count = 1 And ((IsNumeric(TOTAL_LIST(0).VALUE) Or CHECK.Count = 0)) Then
-                NODE.VALUE = TOTAL_LIST(0).VALUE
-            ElseIf TOTAL_LIST.Count >= 1 Then
-                For Each ITEM_IN_LIST As TREE_NODE In TOTAL_LIST
-                    CHECK = MATCH_COLLECTION_TO_DICTIONARY(Regex.Matches(ITEM_IN_LIST.VALUE, "[*,+,/,-,^]"))
-                    If CHECK.Count = 0 Then ' Its a number or variable.
-                        NODE.LEFT.Add(ITEM_IN_LIST)
-                    Else
-                        NODE.RIGHT.Add(ITEM_IN_LIST)
-                    End If
-                Next
+                NODE.RIGHT = New List(Of TREE_NODE)
+                Dim CHECK As Dictionary(Of String, String) = MATCH_COLLECTION_TO_DICTIONARY(Regex.Matches(TOTAL_LIST(0).VALUE, "[*,+,/,-,^]"))
+                If TOTAL_LIST.Count = 1 And ((IsNumeric(TOTAL_LIST(0).VALUE) Or CHECK.Count = 0)) Then
+                    NODE.VALUE = TOTAL_LIST(0).VALUE
+                ElseIf TOTAL_LIST.Count >= 1 Then
+                    For Each ITEM_IN_LIST As TREE_NODE In TOTAL_LIST
+                        CHECK = MATCH_COLLECTION_TO_DICTIONARY(Regex.Matches(ITEM_IN_LIST.VALUE, "[*,+,/,-,^]"))
+                        If CHECK.Count = 0 Then ' Its a number or variable.
+                            NODE.LEFT.Add(ITEM_IN_LIST)
+                        Else
+                            NODE.RIGHT.Add(ITEM_IN_LIST)
+                        End If
+                    Next
+                End If
             End If
-        End If
     End Sub
 
     ' End of the 'Give Up' Subroutines
@@ -660,17 +687,6 @@ Class OPTIMISER : Inherits UTILITIES
         ' Ie (A+B)(C+D) = (A*C + A*D) + (B*C + B*D). 
 
 
-        If NODE.RIGHT.Count = 1 Then
-            If NODE.RIGHT(0).VALUE = "+" Then
-                MODE = MULTIPLIER_NUM.SUM
-            Else
-                MODE = MULTIPLIER_NUM.OTHER
-            End If
-        Else
-            MODE = MULTIPLIER_NUM.OTHER
-        End If
-
-
         If Not NODE.LEFT Is Nothing Then
             For Each NODE_ELEMENT As TREE_NODE In NODE.LEFT
                 MULTIPLIER_SIMPLIFIER(NODE_ELEMENT)
@@ -685,55 +701,120 @@ Class OPTIMISER : Inherits UTILITIES
 
         If NODE.VALUE = "*" Then
             ' Console.WriteLine("DETECTED THE SHIT" & IN_ORDER(NODE, True) & NODE.LEFT.Count & NODE.RIGHT.Count & NODE.RIGHT(0).VALUE)
-            If NODE.LEFT.Count = 1 Then
-                If NODE.LEFT(0).VALUE = "+" Then ' These two checks mean I have a (a+b+c+...) form for my left node
 
-                    Dim ITERATION_ARRAY = {NODE.LEFT(0).LEFT, NODE.LEFT(0).RIGHT}
-                    For Each ELEMENT As List(Of TREE_NODE) In ITERATION_ARRAY ' Sum Nodes have left and right.
-                        For A As Integer = 0 To ELEMENT.Count() - 1
-                            If Not ELEMENT(A) Is Nothing Then ' Makes sure it exists.
-                                Dim NODE_ELEMENT As TREE_NODE = ELEMENT(A)
+            Dim ITERATION_LIST = {NODE.LEFT, NODE.RIGHT} ' This is a slight modification to allow >2 brackets in a multiplier.
+            ' If I have, say, (9x+3)*(10x-3)*8x, then I will first select (9x+3) and compare it to (10x-3) and 8x, both are doable, but the algorithm will first evaluate (9x+3)*(10x-3).
+            ' It will the return the result as one bracket.
 
-                                ' I have the node I want to multiply.
+            For Each ELEMENT_LIST As List(Of TREE_NODE) In ITERATION_LIST
 
-                                MULTIPLIER_SIMPLIFIER_CALCULATOR(MODE, NODE, NODE_ELEMENT, NODE.RIGHT)
+                Dim BUFFER As Integer = 0
+                For A = 0 To ELEMENT_LIST.Count - 1
+                    ' As whenever there is a successful operation, the count is reduced by 1, I must add a buffer to properly reflect it.
+                    Dim SELECTED_NODE As TREE_NODE = ELEMENT_LIST(A - BUFFER)
 
+                    ' Now I must compare this selected node with every other node in the list.
+                    Dim EVERY_OTHER_NODE As New List(Of TREE_NODE)
+                    EVERY_OTHER_NODE.AddRange(NODE.LEFT)
+                    EVERY_OTHER_NODE.AddRange(NODE.RIGHT)
+                    EVERY_OTHER_NODE.Remove(SELECTED_NODE) '  Removes the one I dont want.
+
+
+                    For C = 0 To EVERY_OTHER_NODE.Count - 1
+
+                        Dim TEMPORARY_NODE As New TREE_NODE
+                        TEMPORARY_NODE.LEFT.Add(SELECTED_NODE)
+                        TEMPORARY_NODE.RIGHT.Add(EVERY_OTHER_NODE(C))
+                        TEMPORARY_NODE.VALUE = "*"
+                        ' I will simulate a binary multiplier so that it will accomodate for previous code I wrote (that only works with 'two' multipliers, like 9x*(10x+3) or something).
+
+                        If TEMPORARY_NODE.RIGHT.Count = 1 Then
+                            If TEMPORARY_NODE.RIGHT(0).VALUE = "+" Then
+                                MODE = MULTIPLIER_NUM.SUM
+                            Else
+                                MODE = MULTIPLIER_NUM.OTHER
                             End If
-                        Next
+                        Else
+                            MODE = MULTIPLIER_NUM.OTHER
+                        End If
+
+                        If TEMPORARY_NODE.LEFT.Count = 1 Then
+                            If TEMPORARY_NODE.VALUE = "+" Then ' These two checks mean I have a (a+b+c+...) form for my left node
+
+                                Dim ITERATION_ARRAY = {TEMPORARY_NODE.LEFT(0).LEFT, TEMPORARY_NODE.LEFT(0).RIGHT}
+                                For Each ELEMENT As List(Of TREE_NODE) In ITERATION_ARRAY ' Sum Nodes have left and right.
+                                    For B As Integer = 0 To ELEMENT.Count() - 1
+                                        If Not ELEMENT(B) Is Nothing Then ' Makes sure it exists.
+                                            Dim NODE_ELEMENT As TREE_NODE = ELEMENT(B)
+
+                                            ' I have the node I want to multiply.
+                                            MULTIPLIER_SIMPLIFIER_CALCULATOR(MODE, TEMPORARY_NODE, NODE_ELEMENT, TEMPORARY_NODE.RIGHT)
+                                            BUFFER += 1
+                                        End If
+                                    Next
+                                Next
+                                TEMPORARY_NODE.VALUE = "+"
+                                TEMPORARY_NODE.LEFT.RemoveAt(0)
+                                TEMPORARY_NODE.RIGHT = New List(Of TREE_NODE)
+                            End If
+                        End If
+                        If TEMPORARY_NODE.LEFT.Count >= 1 And TEMPORARY_NODE.RIGHT.Count = 1 Then ' This is the 1 scenario the top if statement doesn't take into account.
+                            ' I have had some preperations done beforehand so that all the * nodes have the + nodes on the right.
+                            Dim BEFORE_COUNT As Integer = TEMPORARY_NODE.LEFT.Count
+                            '  Console.WriteLine("DETECTED THE SHIT" & IN_ORDER(NODE, True))
+                            If TEMPORARY_NODE.RIGHT(0).VALUE = "+" Then ' These two checks mean I have a (a+b+c+...) form for my right node, ie A*(x+y+z)
+                                ' Console.WriteLine("DETECTED THE SHIT")
+                                Dim NEW_NODE As New TREE_NODE
+                                NEW_NODE.VALUE = "*"
+                                If TEMPORARY_NODE.LEFT.Count = 2 Then
+                                    NEW_NODE.LEFT.Add(TEMPORARY_NODE.LEFT(0))
+                                    NEW_NODE.RIGHT.Add(TEMPORARY_NODE.LEFT(1))
+                                ElseIf TEMPORARY_NODE.LEFT.Count > 2 Then
+                                    NEW_NODE.LEFT = TEMPORARY_NODE.LEFT.GetRange(0, TEMPORARY_NODE.LEFT.Count - 1) ' Splits the newnode so it is displayed properly.
+                                    NEW_NODE.RIGHT = TEMPORARY_NODE.LEFT.GetRange(TEMPORARY_NODE.LEFT.Count - 1, 1)
+                                Else
+                                    NEW_NODE.LEFT.Add(TEMPORARY_NODE.LEFT(0))
+                                    Dim ONE_NODE As New TREE_NODE
+                                    ONE_NODE.VALUE = "1"
+                                    NEW_NODE.RIGHT.Add(ONE_NODE)
+                                End If
+
+
+
+                                MULTIPLIER_SIMPLIFIER_CALCULATOR(MODE, TEMPORARY_NODE, NEW_NODE.CLONE(), TEMPORARY_NODE.RIGHT)
+                                TEMPORARY_NODE.VALUE = "+"
+                                TEMPORARY_NODE.LEFT.RemoveRange(0, BEFORE_COUNT)
+                                TEMPORARY_NODE.RIGHT = New List(Of TREE_NODE)
+                                TEMPORARY_NODE.RIGHT.Add(TEMPORARY_NODE.LEFT(0))
+                                TEMPORARY_NODE.LEFT.RemoveAt(0)
+                            End If
+                        End If
+
+                        If TEMPORARY_NODE.VALUE = "+" Then ' This means that there was a successful calculation.
+                            Console.WriteLine("done lol")
+                            ' We will remove the two nodes that were previously in the temporary node
+                            ELEMENT_LIST.Remove(SELECTED_NODE)
+                            NODE.LEFT.Remove(EVERY_OTHER_NODE(C))
+                            NODE.RIGHT.Remove(EVERY_OTHER_NODE(C))
+                            If NODE.LEFT.Count + NODE.RIGHT.Count = 0 Then ' I will replace this node with the formed node, as there will only be 1 element in the * node.
+                                NODE.VALUE = TEMPORARY_NODE.VALUE
+                                NODE.LEFT.AddRange(TEMPORARY_NODE.LEFT)
+                                NODE.RIGHT.AddRange(TEMPORARY_NODE.RIGHT)
+                                TEMPORARY_NODE.LEFT.RemoveRange(0, TEMPORARY_NODE.LEFT.Count)
+                                TEMPORARY_NODE.RIGHT.RemoveRange(0, TEMPORARY_NODE.RIGHT.Count)
+                                TEMPORARY_NODE = Nothing
+                            Else
+                                NODE.RIGHT.Add(TEMPORARY_NODE)
+                            End If
+                            BUFFER += 1 ' Set the buffer.
+                            Exit For 'Exit the for 
+                        End If
+
+
                     Next
-                    NODE.VALUE = "+"
-                    NODE.LEFT.RemoveAt(0)
-                    NODE.RIGHT = New List(Of TREE_NODE)
-                End If
-            End If
-            If NODE.LEFT.Count >= 1 And NODE.RIGHT.Count = 1 Then ' This is the 1 scenario the top if statement doesn't take into account.
-                Dim BEFORE_COUNT As Integer = NODE.LEFT.Count
-                '  Console.WriteLine("DETECTED THE SHIT" & IN_ORDER(NODE, True))
-                If NODE.RIGHT(0).VALUE = "+" Then ' These two checks mean I have a (a+b+c+...) form for my right node, ie A*(x+y+z)
-                    ' Console.WriteLine("DETECTED THE SHIT")
-                    Dim NEW_NODE As New TREE_NODE
-                    NEW_NODE.VALUE = "*"
-                    If NODE.LEFT.Count = 2 Then
-                        NEW_NODE.LEFT.Add(NODE.LEFT(0))
-                        NEW_NODE.RIGHT.Add(NODE.LEFT(1))
-                    ElseIf NODE.LEFT.Count > 2 Then
-                        NEW_NODE.LEFT = NODE.LEFT.GetRange(0, NODE.LEFT.Count - 1) ' Splits the newnode so it is displayed properly.
-                        NEW_NODE.RIGHT = NODE.LEFT.GetRange(NODE.LEFT.Count - 1, 1)
-                    Else
-                        NEW_NODE.LEFT.Add(NODE.LEFT(0))
-                        Dim ONE_NODE As New TREE_NODE
-                        ONE_NODE.VALUE = "1"
-                        NEW_NODE.RIGHT.Add(ONE_NODE)
-                    End If
+                Next
 
-
-
-                    MULTIPLIER_SIMPLIFIER_CALCULATOR(MODE, NODE, NEW_NODE.CLONE(), NODE.RIGHT)
-                    NODE.VALUE = "+"
-                    NODE.LEFT.RemoveRange(0, BEFORE_COUNT)
-                    NODE.RIGHT = New List(Of TREE_NODE)
-                End If
-            End If
+            Next
         End If
 
 
@@ -856,18 +937,40 @@ Class OPTIMISER : Inherits UTILITIES
                                 Dim TERMS_A, TERMS_B As SEPERATED_TERMS
                                 TERMS_A = RETURN_VARIABLE_AND_COEFFICIENT(ELEMENT_A.CLONE())
                                 TERMS_B = RETURN_VARIABLE_AND_COEFFICIENT(ELEMENT_B_TEMP.CLONE())
-                                '  Console.WriteLine(IN_ORDER(ELEMENT_A, True) & " WHAT " & IN_ORDER(ELEMENT_B_TEMP, True))
-                                If IN_ORDER(TERMS_A.VARIABLE, True) = IN_ORDER(TERMS_B.VARIABLE, True) Then
-                                    Dim NEW_NODE As New TREE_NODE
-                                    NEW_NODE.VALUE = TERMS_A.COEFFICIENT + TERMS_B.COEFFICIENT ' This will be the new coefficient
-                                    ' Console.WriteLine("FINALISED THING" & IN_ORDER(TERMS_B.VARIABLE, True) & "NODE ROOT" & TERMS_B.VARIABLE.LEFT(0).VALUE)
-                                    If TERMS_B.VARIABLE.VALUE = "*" Then
-                                        TERMS_B.VARIABLE.LEFT.Insert(0, NEW_NODE) ' I will add the coefficient to the front of the node's variable. 
-                                    ElseIf TERMS_B.VARIABLE.VALUE = "/" Then ' As "/" is binary, then I must insert it into the extra node beyond the left node. Say * or +. Ie, its some addition, or multiplication, divided by something else.
-                                        TERMS_B.VARIABLE.LEFT(0).LEFT.Insert(0, NEW_NODE) ' I'll go left in the left because who likes it right.
+                                Console.WriteLine(IN_ORDER(ELEMENT_A, True) & " WHAT " & IN_ORDER(ELEMENT_B_TEMP, True))
+
+
+                                Dim ALL_TERMS_A As New List(Of TREE_NODE)
+                                ALL_TERMS_A.AddRange(TERMS_A.VARIABLE.LEFT)
+                                ALL_TERMS_A.AddRange(TERMS_A.VARIABLE.RIGHT)
+                                Dim ALL_TERMS_B As New List(Of TREE_NODE)
+                                ALL_TERMS_B.AddRange(TERMS_B.VARIABLE.LEFT)
+                                ALL_TERMS_B.AddRange(TERMS_B.VARIABLE.RIGHT)
+
+                                Dim STRING_TERMS_A = (From ITEM In ALL_TERMS_A Select IN_ORDER(ITEM, True)).ToList()
+
+                                Dim STRING_TERMS_B = (From ITEM In ALL_TERMS_B Select IN_ORDER(ITEM, True)).ToList() ' This allows me to compare the two lists, so that in cases where I have 9xy + 9yx, I can still find they have the same variables.
+
+
+                                If ALL_TERMS_A.Count = ALL_TERMS_B.Count Then ' They must have the same number of variables.
+                                    Dim COUNT_SIMILAR As Integer = 0
+                                    For Each ITEM In STRING_TERMS_A
+                                        STRING_TERMS_B.Remove(ITEM)
+                                    Next
+
+                                    If STRING_TERMS_B.Count = 0 Then ' If I just compared their string then it wouldnt allow 9xy + 9yx as although they're the same, the string wont be.
+                                        Console.WriteLine(IN_ORDER(TERMS_A.VARIABLE, True) & " " & IN_ORDER(TERMS_B.VARIABLE, True))
+                                        Dim NEW_NODE As New TREE_NODE
+                                        NEW_NODE.VALUE = TERMS_A.COEFFICIENT + TERMS_B.COEFFICIENT ' This will be the new coefficient
+                                        ' Console.WriteLine("FINALISED THING" & IN_ORDER(TERMS_B.VARIABLE, True) & "NODE ROOT" & TERMS_B.VARIABLE.LEFT(0).VALUE)
+                                        If TERMS_B.VARIABLE.VALUE = "*" Then
+                                            TERMS_B.VARIABLE.LEFT.Insert(0, NEW_NODE) ' I will add the coefficient to the front of the node's variable. 
+                                        ElseIf TERMS_B.VARIABLE.VALUE = "/" Then ' As "/" is binary, then I must insert it into the extra node beyond the left node. Say * or +. Ie, its some addition, or multiplication, divided by something else.
+                                            TERMS_B.VARIABLE.LEFT(0).LEFT.Insert(0, NEW_NODE) ' I'll go left in the left because who likes it right.
+                                        End If
+                                        ELEMENT_TOTAL = TERMS_B.VARIABLE ' This will be the new node.
+                                        ELEMENT_B = ELEMENT_B_TEMP ' This is here so I can remove it.
                                     End If
-                                    ELEMENT_TOTAL = TERMS_B.VARIABLE ' This will be the new node.
-                                    ELEMENT_B = ELEMENT_B_TEMP ' This is here so I can remove it.
                                 End If
                             Next
 

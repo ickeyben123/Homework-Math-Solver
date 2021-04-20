@@ -24,6 +24,7 @@ Class SIMPLE_SIMPLIFY : Inherits EXPRESSION_TREE
         RESULT = OPTIMISER_CLASS.EXPAND_BRACKETS()
     End Sub
 
+
     Private Function ZERO_TO_NEGATIVE(NUMBER As Integer)
         If NUMBER = 0 Then
             Return -1

@@ -18,6 +18,9 @@ Class OPTIMISER : Inherits UTILITIES
 
         ' Change the negative nodes to positive nodes, where the negative value is now a multiply node with -1 and the actual value.
         ' Level operators. Operators like + and * can be changed to have many children, instead of the binary two. This is why removing - and simplifying / operators are important.
+
+        ' Added on are actual simplification, such as collecting like terms, etc.
+
         Dim LAST_TREE As String
 
         Dim GLOBAL_LAST_TREE As String
@@ -58,8 +61,6 @@ Class OPTIMISER : Inherits UTILITIES
             CLEANUP_FINALISER(TREE_TO_MODIFY)
             'REMOVE_DIVISION_ENTIRELY(TREE_TO_MODIFY)
             '  DIVISION_MULTIPLICATION(TREE_TO_MODIFY)
-            'Console.WriteLine("finished boi v3")
-            'Console.WriteLine(IN_ORDER(TREE_TO_MODIFY, True))
         Next
         ' Console.WriteLine("finished boi v3")
         ' Console.WriteLine(IN_ORDER(TREE_TO_MODIFY, True))
@@ -102,6 +103,54 @@ Class OPTIMISER : Inherits UTILITIES
 
 
     End Sub
+
+    Private OPERATORS = New Dictionary(Of String, Func(Of Double, Double, Double))() From { ' An operator dictionary.
+    {"+", Function(x, y) x + y},
+    {"-", Function(x, y) x - y},
+    {"/", Function(x, y) x / y},
+    {"*", Function(x, y) x * y},
+    {"^", Function(x, y) x ^ y}
+}
+    Public Function OUTPUT_VALUE(NODE As TREE_NODE, VALUE As Integer) As Double
+        ' This is a simple algorithm that will set every variable to the input parameter 'VALUE'.
+        ' The output will then be returned.
+
+        ' This only exists to compare functions easily, as even if two functions are equal, their form can be different.
+        ' This will be primarially used in the homework submission area.
+
+        ' The general idea will be to compute the lowest left node, then return this value, and go up to the root, and through the right. 
+        ' Ie I calculate the left dependent on the root, then I 'go to the root' and calculate the right node with the computed left node as the starting point.
+        ' Normally this would be a binary tree, so I would actually 'go to the root' by calculating the left and right, but as trees can have more than one in the left and right, I must first calculate their stuff.
+
+        ' The values of each node will be calulated much the same, so by virtue of this algorithm I go from the bottom to the top.
+        Dim COMPUTED As Double
+        If NODE.VALUE = "*" Or NODE.VALUE = "/" Or NODE.VALUE = "^" Then
+            COMPUTED = 1 'This will be the starting integer I will go off.
+        ElseIf NODE.VALUE = "+" Or NODE.VALUE = "-" Then
+            COMPUTED = 0 ' Obviously + nodes will start from 0.
+        ElseIf IsNumeric(NODE.VALUE) Then
+            COMPUTED = NODE.VALUE
+        Else
+            ' This is probably a variable, like an x, so I return 1.
+            Return VALUE
+        End If
+
+        If Not NODE.LEFT Is Nothing Then
+            For Each NODE_ELEMENT As TREE_NODE In NODE.LEFT
+                Dim OPERATION As Func(Of Double, Double, Double) = OPERATORS(NODE.VALUE)
+                COMPUTED = OPERATION(COMPUTED, OUTPUT_VALUE(NODE_ELEMENT, VALUE)) ' This will calculate the resultant.
+            Next
+        End If
+
+        If Not NODE.RIGHT Is Nothing Then
+            For Each NODE_ELEMENT As TREE_NODE In NODE.RIGHT
+                Dim OPERATION As Func(Of Double, Double, Double) = OPERATORS(NODE.VALUE) ' The same deal for the right.
+                COMPUTED = OPERATION(COMPUTED, OUTPUT_VALUE(NODE_ELEMENT, VALUE))
+            Next
+        End If
+
+        Return COMPUTED
+    End Function
 
     Public Sub REMOVE_DIVISION_ENTIRELY(NODE As TREE_NODE)
         ' THIS ASSUMES NUMERIC POWERS!!
@@ -153,7 +202,6 @@ Class OPTIMISER : Inherits UTILITIES
         PREPARATION_BY_TIMES_RULING(TREE_TO_MODIFY)
         PREPERATION_POWER_RULING(TREE_TO_MODIFY)
         MULTIPLIER_WRAPPER_SOLVER(TREE_TO_MODIFY)
-        Console.WriteLine("to be " & IN_ORDER(TREE_TO_MODIFY, True))
         DIFFERENTATION_WRAPPER(TREE_TO_MODIFY)
         ' Simplify the differentiated
         ' NEGATIVE_POWERS_TO_DIVISORS(TREE_TO_MODIFY)
@@ -295,8 +343,10 @@ Class OPTIMISER : Inherits UTILITIES
                         NEW_NODE.RIGHT.AddRange(REFERENCE_NODE.RIGHT)
                         PLUS_NODE.LEFT.Add(NEW_NODE)
                     Else
-                        Dim CHECK = MATCH_COLLECTION_TO_DICTIONARY(Regex.Matches(SELECTED_NODE.VALUE, "(?=[a-z])[^x]"))
+                        Dim CHECK = MATCH_COLLECTION_TO_DICTIONARY(Regex.Matches(SELECTED_NODE.VALUE, "(?=[a-z])[^x]")) ' Regex that looks for a variable that isnt x. Lookahead required to make sure it isn't a number (ie it will only return true when there is an a-z char, and then it returns to the start of the string :P).
                         If CHECK.Count > 0 Then
+                            ' This means that we have, say, a y variable. If we are differentiating y^2, then eventually we will reach y as a product of the chain rule. The derivative of y is dy, and as I am automatically doing the ration over dx, it will become dy/dx. 
+                            ' x has special treatment as it will become 1, thus I ignore it. This is the basic premise of multivariable calculus.
                             Dim TOP, BOTTOM As New TREE_NODE
                             Dim CLONED_SELECTED_NODE As TREE_NODE = SELECTED_NODE.CLONE
                             TOP.VALUE = "d" & SELECTED_NODE.VALUE
